@@ -81,23 +81,15 @@ vff_hjemme <- seasons_all |>
 
 vff_hjemme <- vff_hjemme |> 
   filter(resultat != is.na(resultat)) |> 
-  filter(resultat != "Optakt" )
+  filter(resultat != "Optakt" ) |> 
+  mutate(datotid = ydm_hm(paste(sæson_år, dato_tid), tz = "UTC"))
 
 # finder kampdage, som skal bruges til at få data fra DMI
 
-kampdage <- vff_hjemme |> 
-  select(dato_tid, sæson_år) |> 
-  mutate(samlet_dato = paste(sæson_år, dato_tid)) |> 
-  select(samlet_dato) |> 
-  mutate(datotid = as.POSIXct(
-      samlet_dato,
-      format = "%Y-%d-%mT%H:%M:%SZ",
-      tz = "UTC"
-    ))
+library(lubridate)
 
-for (i in 2003:2026) {
-  lapply(seasons[i], mutate(season_yr = names(seasons[i])))
-}
+kampdage <- vff_hjemme |> 
+  select(datotid)
 
 
 
