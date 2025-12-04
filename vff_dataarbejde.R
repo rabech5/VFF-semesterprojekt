@@ -14,7 +14,7 @@ seasons <- list()
 # loop hvor hver sæson kommer som en liste, med runder som tabeller
 # alle listerne sættes i den tomme liste
 
-for (i in 2003:2026) {
+for (i in 2002:2026) {
   html <- read_html(paste0(url, i), encoding = "UTF-8")
   
   tables <- html |>
@@ -220,16 +220,38 @@ seasons_all <- seasons_all |>
   )
 
 # nye variabler for sidste møde mellem holdene. ved at bruge group_by på kamp variablen,
-# bliver det pr sidste hjemmemøde og sidste udemøde. altså bliver sidste møde resultat altså en
-# variabel for hjemmekampene hvor det er resulatet for sidste hjemmekamp, og omvendt for udekampe
+# bliver det pr sidste hjemmemøde og sidste udemøde. altså bliver sidste møde tilskuere altså en
+# variabel for hjemmekampene hvor det er tilskuere i sidste hjemmekamp, og omvendt for udekampe
 
 seasons_all <- seasons_all |> 
   group_by(kamp) |> 
   mutate(
     sidste_møde_tilskuere = lag(tilskuere)
   ) |> 
-  ungroup() |> 
-  mutate(sidste_møde_resultat = lag(vff_resultat))
+  ungroup()
+
+# den nye variabel for resultatet for det sidste møde skal ikke opdeles pr. sidste hjemmemøde eller udemøde
+# denne skal bare være generelt for sidste møde. derfor findes først modstanderen, og grupperes efter denne,
+# og derefter laves variablen for resultatet i det sidste møde
+
+seasons_all <- seasons_all |> 
+  mutate(kamp2 = kamp) |> 
+  separate_wider_delim(
+    kamp2,
+    delim = "-",
+    names = c("hjemme", "ude")
+  ) |> 
+  mutate(
+    modstander = if_else(str_detect(hjemme, "VFF"), ude, hjemme)
+  ) |> 
+  group_by(modstander) |> 
+  mutate(sidste_møde_resultat = lag(vff_resultat)) |> 
+  ungroup()
+
+# da der ikke findes alt relevant vejr data før 2003, fjernes den tidligere sæson
+
+seasons_all <- seasons_all |> 
+  filter(as.numeric(sæson_år) >= 2003)
 
 # for at lave et loop der kan hente DMI data for alle kampdagene på en gang,
 # skal en ny variabel laves ud fra datotid_utc variablen
@@ -287,6 +309,16 @@ seasons_all <- seasons_all |>
     names = c("dato_dag_only", "dato_tid_only")
   ) |> 
   mutate(dmi_dato = paste0(dato_dag_only, "T", dato_tid_only, "Z"))
+
+# datasættet uploades igen i databasen, for at kunne bruge den nye dmi_dato til at joine på
+
+con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
+
+dbWriteTable(con, "db_seasons_all", seasons_all, overwrite = TRUE)
+
+dbDisconnect(con)
+
+# dmi datoen trækkes ud som en vektor, sådan at den kan bruges i et loop
 
 dmi_dato <- seasons_all |> 
   select(dmi_dato) |>
@@ -442,25 +474,54 @@ vff_all <- vff_all |>
   filter(resultat != is.na(resultat)) |> 
   filter(resultat != "Optakt" ) |> 
   mutate(datotid = as.POSIXct(datotid)) |> 
-  select(-dato_tid, -point_kamp, -hjemme_mål, -(resultat:resultat_remainder), -dommer, -tv,
-         -mål_sidste_tre, -point_sæson, -dato_dag_only, -dato_tid_only, -dmi_dato,
-         -point_sidste3, -vff_mål, -ude_mål,)
+  select(-dato_tid, -kamp, -vff_resultat, -point_kamp, -hjemme_mål, -(resultat:resultat_remainder), -dommer, -tv,
+         -mål_sidste_tre, -point_sæson, -dato_dag_only, -dato_tid_only, -dmi_dato, -real_år,
+         -point_sidste3, -vff_mål, -ude_mål, -hjemme, -ude)
 
-# dernæst opdeles kamp variablen, sådan at modstanderen står for sig selv i egen kolonne
+# der er stadig NA'er i de to sidste_møde variabler, så disse skal fikses
+# for at fikse sidste_møde_tilskuere, laves først en ny variable der kategoriserer efter om 
+# sidste_møde_tilskuere er NA eller ej
 
 vff_all <- vff_all |> 
-  separate_wider_delim(
-    kamp,
-    delim = "-",
-    names = c("vff", "modstander")
-  ) |> 
-  select(-vff)
+  mutate(nyt_hold = if_else(is.na(sidste_møde_tilskuere), 1, 0))
+
+#filtrerer efter disse kampe, for at undersøge dem nærmere
+
+nye_hold <- vff_all |> 
+  filter(nyt_hold == 1)
+
+# der er tydelig forskelle på størrelsen af holdene, så de deles op sådan at dem havde mindre end 4000
+# tilskuere får egen kategori, og dem havde mere end 4000 tilskuere får egen kategori
+
+vff_all <- vff_all |>
+  mutate(lille_stor_ny = case_when(nyt_hold == 1 & tilskuere < 4000 ~ 1,
+  nyt_hold == 1 & tilskuere > 4000 ~ 2))
+
+# NA'erne i sidste_møde_tilskuere tildeles en ny værdi på baggrund af gennemsnitlige tilskuere for de to grupper
+
+vff_all <- vff_all |> 
+  group_by(lille_stor_ny) |> 
+  mutate(avg_tilskuere = mean(tilskuere)) |> 
+  ungroup() |> 
+  mutate(
+    sidste_møde_tilskuere = if_else(is.na(sidste_møde_tilskuere) & lille_stor_ny == 1, avg_tilskuere, sidste_møde_tilskuere),
+    sidste_møde_tilskuere = if_else(is.na(sidste_møde_tilskuere) & lille_stor_ny == 2, avg_tilskuere, sidste_møde_tilskuere)
+  )
+
+# de irrelevante variabler der blev brugt til at udfylde NA'er slettes igen
+
+vff_all <- vff_all |> 
+  select(-(nyt_hold:avg_tilskuere))
+
+# for at fikse sidste_møde_resultat ændres NA observationerne til "første møde"
+
+vff_all <- vff_all |> 
+  mutate(sidste_møde_resultat = if_else(is.na(sidste_møde_resultat), "første møde", sidste_møde_resultat))
+
+# NA'er i helligdage ændres til at hedde ingen, og observationer med manglende vejr data slettes
 
 vff_all <- vff_all |> 
   mutate(
-    sidste_møde_tilskuere = if_else(is.na(sidste_møde_tilskuere), 
-    mean(sidste_møde_tilskuere, na.rm = TRUE), 
-    sidste_møde_tilskuere),
     helligdag = if_else(is.na(helligdag), "ingen", helligdag)
   ) |> 
   filter(!is.na(precip_past1h))
