@@ -199,7 +199,7 @@ seasons_all <- seasons_all |>
   )
 
 # datotids variabler
-# inden den samlede datotid variabel laves, skal det reele kampene blev spillet først laves,
+# inden den samlede datotid variabel laves, skal det reele år kampene blev spillet først laves,
 # i stedet for sæsonåret. derefter laves tidsvariablen, som også konverteres til en ny variabel
 # hvor tidszonen er UTC, som skal bruges til at få data fra DMI
 
@@ -281,14 +281,14 @@ dbDisconnect(con)
 # for at lave loopet vælges først kun vff hjemmekampe, og kampe der ikke har et resultat 
 # og ikke er relevante fjernes. med dette og datotids variable i det nye format, kan der laves et loop
 
-seasons_all <- seasons_all |> 
+vff_hjemme <- seasons_all |> 
   filter(str_detect(kamp, "VFF-")) |> 
   filter(resultat != is.na(resultat)) |> 
   filter(resultat != "Optakt" )
 
 # vælger den nye dmi_dato og trækker den ud som en vektor, som skal bruges til at få data fra DMI
 
-dmi_dato <- seasons_all |> 
+dmi_dato <- vff_hjemme |> 
   select(dmi_dato) |>
   pull()
 
@@ -320,7 +320,12 @@ dbDisconnect(con)
 
 # dmi datoen trækkes ud som en vektor, sådan at den kan bruges i et loop
 
-dmi_dato <- seasons_all |> 
+vff_hjemme <- seasons_all |> 
+  filter(str_detect(kamp, "VFF-")) |> 
+  filter(resultat != is.na(resultat)) |> 
+  filter(resultat != "Optakt" )
+
+dmi_dato <- vff_hjemme |> 
   select(dmi_dato) |>
   pull()
 
@@ -525,3 +530,23 @@ vff_all <- vff_all |>
     helligdag = if_else(is.na(helligdag), "ingen", helligdag)
   ) |> 
   filter(!is.na(precip_past1h))
+
+# ny variabel for om det er sommerferie eller ej
+
+vff_all <- vff_all |> 
+  mutate(
+  sommerferie = as.factor(if_else(month(datotid) == 07 | (day(datotid) %in% 26:30 & month(datotid) == 06) | (day(datotid) %in% 1:12 & month(datotid) == 08), 1, 0))
+)
+
+# sæson_år variablen står stadig som en karakter, så denne ændres til numerisk
+
+vff_all <- vff_all |> 
+  mutate(sæson_år = as.numeric(sæson_år))
+
+# til sidst laves alle de kategoriske variabler til faktorer, og datasættet gemmes derefter
+# som en rds fil
+
+vff_all <- vff_all |> 
+  mutate(across(where(is.character), as.factor))
+
+write_rds(vff_all, "data/vff_all.rds")
