@@ -336,7 +336,7 @@ base_url <- "https://dmigw.govcloud.dk/v2/"
 info_url <- "metObs/collections/observation/items?"
 req_url <- "stationId=06060&datetime="
 limit <- "&limit=100000"
-api_key <- Sys.getenv("DMI_API_KEY")
+api_key <- Sys.getenv("MY_API_KEY")
 
 # laver en tom liste som data skal ligge i
 
@@ -374,11 +374,12 @@ vejr_alle <- bind_rows(properties)
 
 con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
 
-dbWriteTable(con, "db_vejr_alle", vejr_alle)
+dbWriteTable(con, "db_vejr_alle", vejr_alle, overwrite = TRUE)
+
+vejr_alle <- dbReadTable(con, "db_vejr_alle")
 
 dbDisconnect(con)
 
-vejr_alle <- dbReadTable(con, "db_vejr_alle")
 # udvælger vejr variabler og lægger i en ny dataframe
 
 vejr_udvalgt <- vejr_alle |> 
@@ -397,7 +398,7 @@ vejr_udvalgt <- vejr_udvalgt |>
 
 con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
 
-dbWriteTable(con, "db_vejr_udvalgte", vejr_udvalgt)
+dbWriteTable(con, "db_vejr_udvalgte", vejr_udvalgt, overwrite = TRUE)
 
 dbDisconnect(con)
 
@@ -531,17 +532,28 @@ vff_all <- vff_all |>
   ) |> 
   filter(!is.na(precip_past1h))
 
-# ny variabel for om det er sommerferie eller ej
+# ny variabel for om det er sommerferie eller ej og efterårsferie eller ej
 
 vff_all <- vff_all |> 
   mutate(
   sommerferie = as.factor(if_else(month(datotid) == 07 | (day(datotid) %in% 26:30 & month(datotid) == 06) | (day(datotid) %in% 1:12 & month(datotid) == 08), 1, 0))
 )
 
-# sæson_år variablen står stadig som en karakter, så denne ændres til numerisk
+# sæson_år variablen står stadig som en karakter, og for at prøve at fange sæson specifikke
+# effekte, vil denne gerne beholdes som en faktor
 
 vff_all <- vff_all |> 
-  mutate(sæson_år = as.numeric(sæson_år))
+  mutate(sæson_år = as.factor(sæson_år))
+
+# for ikke at opfange for meget overlap mellem datotids variablen og sæsonåret,
+# trækkes relevante variabler ud fra variablen, som nye variabler i stedet for og datotid fjernes
+
+vff_all <- vff_all |> 
+  mutate(
+    måned = month(datotid),
+    uge_nr = week(datotid)
+  ) |>
+  select(-datotid)
 
 # til sidst laves alle de kategoriske variabler til faktorer, og datasættet gemmes derefter
 # som en rds fil
@@ -550,3 +562,8 @@ vff_all <- vff_all |>
   mutate(across(where(is.character), as.factor))
 
 write_rds(vff_all, "data/vff_all.rds")
+
+
+
+
+

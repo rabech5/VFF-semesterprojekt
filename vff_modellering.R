@@ -8,6 +8,18 @@ pacman::p_load(tidyverse, rvest, janitor, RSQLite, slider, leaps, glmnet)
 
 vff_all <- read_rds("data/vff_all.rds")
 
+# for at sørge for der ikke opstår problemer med factor levels, som findes i testsættet
+# men ikke i træningssættet, laves helligdagsvariablen om til om der blot var en hvilken som helst
+# helligdag på dagen, eller ej. derefter grupperes de levels i modstander variablen, der kun optræder
+# en enkelt gang, sådan at de får et fælles niveau
+
+vff_all <- vff_all |> 
+  mutate(
+    er_helligdag = as.factor(if_else(helligdag == "ingen", 0, 1)),
+    modstander = fct_lump_min(modstander, min = 2, other_level = "andre_hold")
+  ) |> 
+  select(-helligdag)
+
 # sætter et seed
 
 set.seed(2)
@@ -16,7 +28,7 @@ set.seed(2)
 
 train_size <- floor(0.7 * nrow(vff_all))
 
-train_data <- sample(seq_len(nrow(vff_all)), size = train_size)
+train_data <- sample(nrow(vff_all), size = train_size)
 
 test_data <- -train_data
 
@@ -65,12 +77,6 @@ predict.regsubsets <- function(object, newdata, id, ...) {
 
 lm_full_1m <- lm(tilskuere ~ ., vff_train_1m)
 
-# fordi modstanderen KBK ikke findes i træningssættet, bliver vi nødt til
-# at fjerne den fra testsættet for at lave predictions
-
-vff_test_1m <- vff_test_1m |> 
-  filter(modstander != "BKF")
-
 # finder predictede værdier
 
 pred_full_1m <- predict(lm_full_1m, 
@@ -84,11 +90,6 @@ sqrt(testmse_full_1m)
 ## 10 dage inden kampstart ------------------------------------------------
 
 lm_full_d10 <- lm(tilskuere ~ ., vff_train_d10)
-
-# igen bliver vi nødt til at fjerne observationen med det nye level i testsættet
-
-vff_test_d10 <- vff_test_d10 |> 
-  filter(modstander != "BKF")
 
 # finder de predictede værdier
 
@@ -104,11 +105,6 @@ sqrt(testmse_full_d10)
 
 lm_full_d7 <- lm(tilskuere ~ ., vff_train_d7)
 
-# igen bliver vi nødt til at fjerne observationen med det nye level i testsættet
-
-vff_test_d7 <- vff_test_d7 |> 
-  filter(modstander != "BKF")
-
 # finder de predictede værdier
 
 pred_full_d7 <- predict(lm_full_d7, 
@@ -122,11 +118,6 @@ sqrt(testmse_full_d7)
 ## 3 dage inden kampstart ------------------------------------------------
 
 lm_full_d3 <- lm(tilskuere ~ ., vff_train_d3)
-
-# igen bliver vi nødt til at fjerne observationen med det nye level i testsættet
-
-vff_test_d3 <- vff_test_d3 |> 
-  filter(modstander != "BKF")
 
 # finder de predictede værdier
 
@@ -373,6 +364,8 @@ best_bwd_1m <- regsubsets(tilskuere ~ .,
                          nvmax = nvmax,
                          method = "backward",
                          really.big = TRUE)
+
+coef(best_bwd_1m, best_nvars_1m_bwd)
 
 pred_bwd_1m <- predict(best_bwd_1m, vff_test_1m, id = best_nvars_1m_bwd)
 
@@ -826,3 +819,4 @@ best_models <- data.frame(
   mutate(RMSE = sqrt(MSE))
 
 best_models
+
