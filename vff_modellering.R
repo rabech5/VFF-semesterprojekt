@@ -26,7 +26,7 @@ set.seed(2)
 
 # opdeler dataen i træningssæt og testsæt
 
-train_size <- floor(0.7 * nrow(vff_all))
+train_size <- floor(0.75 * nrow(vff_all))
 
 train_data <- sample(nrow(vff_all), size = train_size)
 
