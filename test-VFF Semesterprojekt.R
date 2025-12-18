@@ -289,6 +289,66 @@ api_char <- base::rawToChar(api_call$content)
 
 api_JSON <- jsonlite::fromJSON(api_char, flatten = TRUE)
 
+# *******************************************************************
+# BJARNE KODE
+pacman::p_load(httr, tidyverse, rjson, lubridata)
+vff_hjemme <- read_rds("data/datoer_hjemme")
+
+hent_dmi_parametre <- function(dato_tid){
+  # 1. Formatér dato korrekt med 'Z' (UTC)
+  dato_tid_formatted <- format(dato_tid, '%Y-%m-%dT%H:%M:%SZ', tz = 'CET')
+  # 2. Byg parametre uden parameterId (hent alle, filtrér bagefter)
+  params <- list(
+    stationId = '06060',
+    datetime =  dato_tid_formatted, #'2024-02-16T17:00:00Z', 
+    `api-key` = Sys.getenv("MY_API_KEY")
+  )
+  
+  response <- GET('https://dmigw.govcloud.dk/v2/metObs/collections/observation/items', query = params)
+  raadata <- content(response, as = "text", encoding = "UTF-8")
+  parsed_data <- fromJSON(raadata)
+  # xx <- parsed_data$features[[1]]$properties
+  
+  properties_list <- lapply(parsed_data$features, function(xxx) xxx$properties)
+  properties_df <- bind_rows(properties_list)
+  
+  target_params <- c("precip_past1h", "precip_dur_past1h", "wind_speed_past1h", "cloud_cover", "temp_dry")
+  udvalgt_data <- properties_df |> 
+    select(observed, parameterId, value) |> 
+    filter(parameterId %in% target_params) |> 
+    arrange(desc(observed)) 
+  
+  parametre_data <- udvalgt_data |> 
+    pivot_wider(names_from = parameterId, values_from = value)
+  
+  return(parametre_data)
+}
+
+# Hent DMI data for alle hjemmekampe
+resultater <- list()
+for (i in seq_along(vff_hjemme$dato_tid)) {
+  dato_tid_raw <- vff_hjemme$dato_tid[i]
+  dato_tid <- floor_date(as.POSIXct(dato_tid_raw), "hour") - hours(2)
+  
+  cat("Processing", i, "of", nrow(vff_hjemme), "- Dato:", as.character(dato_tid), "\n")
+  
+  parametre <- hent_dmi_parametre(dato_tid = dato_tid)
+      resultater[[length(resultater) + 1]] <- tibble(
+      original_dato_tid = dato_tid_raw,
+      dato_tid = dato_tid,
+      temp_dry = parametre$temp_dry,
+      precip_past1h = parametre$precip_past1h,
+      precip_dur_past1h = parametre$precip_dur_past1h,
+      wind_speed_past1h = parametre$wind_speed_past1h
+    )
+}
+
+resultater <- bind_rows(resultater)
+
+# *******************************************************************
+
+
+
 # henter KUN kampdatoer
 kamp_datoer <- vff_hjemme |> 
   mutate(dato = as_date(datotid)) |> 
