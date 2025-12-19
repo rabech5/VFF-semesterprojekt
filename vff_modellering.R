@@ -26,7 +26,7 @@ set.seed(2)
 
 # opdeler dataen i træningssæt og testsæt
 
-train_size <- floor(0.75 * nrow(vff_all))
+train_size <- floor(0.7 * nrow(vff_all))
 
 train_data <- sample(nrow(vff_all), size = train_size)
 
@@ -812,6 +812,15 @@ test_mse_df <- data.frame(
 )
 print(test_mse_df)
 
+test_rmse_df <- data.frame(
+  måned1 = c(sqrt(testmse_full_1m), sqrt(testmse_fwd_1m), sqrt(testmse_bwd_1m), sqrt(testmse_ridge_1m), sqrt(testmse_lasso_1m)),
+  dag10 = c(sqrt(testmse_full_d10), sqrt(testmse_fwd_d10), sqrt(testmse_bwd_d10), sqrt(testmse_ridge_d10), sqrt(testmse_lasso_d10)),
+  dag7 = c(sqrt(testmse_full_d7), sqrt(testmse_fwd_d7), sqrt(testmse_bwd_d7), sqrt(testmse_ridge_d7), sqrt(testmse_lasso_d7)),
+  dag3 = c(sqrt(testmse_full_d3), sqrt(testmse_fwd_d3), sqrt(testmse_bwd_d3), sqrt(testmse_ridge_d3), sqrt(testmse_lasso_d3)),
+  row.names = c("Full Linear", "Forward Selection", "Backward Selection", 
+            "Ridge", "Lasso")
+)
+
 best_models <- data.frame(
   best_model = apply(test_mse_df, 2, function(x) rownames(test_mse_df)[which.min(x)]),
   MSE = apply(test_mse_df, 2, min)
@@ -819,4 +828,70 @@ best_models <- data.frame(
   mutate(RMSE = sqrt(MSE))
 
 best_models
+
+test_rmse_long <- test_rmse_df |> 
+  rownames_to_column("Model") |>
+  pivot_longer(cols = -Model, names_to = "Timeframe", values_to = "RMSE")
+
+test_rmse_long <- test_rmse_long |> 
+  mutate(
+    Timeframe = factor(
+      Timeframe,
+      levels = c("måned1", "dag10", "dag7", "dag3")
+    ))
+
+ggplot(test_mse_long, aes(x = RMSE, y = reorder(Model, -RMSE), fill = Model)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = round(RMSE, 0)), hjust = -0.2, size = 3.5) +
+  facet_wrap(~Timeframe, scales = "free_x", ncol = 2,
+             labeller = labeller(Timeframe = c("dag3" = "3 Dage", "dag7" = "7 Dage",
+                                               "dag10" = "10 Dage", "måned1" = "1 Måned"))) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Model Sammenligning Over Forskellige Prediction Tidspunkter",
+       x = "Root Mean Squared Error (RMSE)",
+       y = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold", size = 12))
+
+test_rmse_long_best <- test_rmse_long |> 
+  filter((Model == "Ridge" & Timeframe == "måned1") | (Model == "Lasso" & Timeframe == "dag10") | 
+         (Model == "Lasso" & Timeframe == "dag7") | (Model == "Lasso" & Timeframe == "dag3"))
+
+test_rmse_long_best <- test_rmse_long_best |> 
+    mutate(
+    Timeframe = factor(Timeframe, 
+                       levels = c("måned1", "dag10", "dag7", "dag3"))
+  )
+
+test_rmse_long_best <- test_rmse_long_best |> 
+  mutate(
+    Timeframe = recode(
+      Timeframe,
+      "dag3"    = "3 Dage",
+      "dag7"    = "7 Dage",
+      "dag10"   = "10 Dage",
+      "måned1"  = "1 Måned"
+    ),
+    Timeframe = factor(
+      Timeframe,
+      levels = c("1 Måned", "10 Dage", "7 Dage", "3 Dage")
+    )
+  )
+
+ggplot(test_rmse_long_best,
+       aes(x = Timeframe, y = RMSE, fill = Model)) +
+  geom_col(width = 0.6) +
+  coord_flip() +
+  geom_text(aes(label = round(RMSE, 0)), hjust = -0.1, size = 5) +
+  labs(
+    title = "Bedst performende ML-modeller",
+    subtitle = "Sammenligning på tværs af tid før kampstart",
+    x = "Tid før kampstart",
+    y = "RMSE",
+    fill = "Model"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold")) +
+  scale_fill_brewer(palette = "Set2")
 
