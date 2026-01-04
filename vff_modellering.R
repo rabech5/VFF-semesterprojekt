@@ -868,18 +868,19 @@ ggplot(test_rmse_long_best,
   theme(plot.title = element_text(face = "bold")) +
   scale_fill_brewer(palette = "Set2")
 
-# nye predictions
+
+# nye predictions --------------------------------------------------------
+# nyt datasæt, for de to næste hjemmekampe i sæsonen, som endnu ikke er spillet
 
 predictions_nye <- data.frame(
   ugedag = c("Søn", "Søn"),
-  tilskuere = c(7702, 6299),
   vff_resultat_lagged = c("uafgjort", "tabt"),
   mål_sidste_kamp = c(1, 1),
   sæson_år = c("2025", "2025"),
   runde_nr = c(20, 22),
   mål_sidste3_lagged = c(6, 2),
-  point_sæson_lagged = c(25, 25),
   point_sidste3_lagged = c(2, 3),
+  point_sæson_lagged = c(25, 25),
   tidspunkt = c("aften", "eftermiddag"),
   sidste_møde_tilskuere = c(7658, 6290),
   modstander = c("BIF", "FCN"),
@@ -887,14 +888,16 @@ predictions_nye <- data.frame(
   temp_dry = c(2, 10),
   wind_speed = c(6.8, 2.4),
   precip_past1h = c(1.0, 0.1),
-  er_helligdag = c(0, 0),
-  d10_tilskuere = c(4587, 2764),
-  d7_tilskuere = c(5021, 3291),
-  d3_tilskuere = c(5383, 3872),
+  d10_tilskuere = c(3987, 2264),
+  d7_tilskuere = c(4921, 3291),
+  d3_tilskuere = c(6283, 4672),
   sommerferie = c(0, 0),
   måned = c(2, 3),
-  uge_nr = c(7, 9)
+  uge_nr = c(7, 9),
+  er_helligdag = c(0, 0)
 )
+
+# sørger for at alt er faktorer, og at faktorerne har samme levels som det originale datasæt
 
 predictions_nye <- predictions_nye |> 
   mutate(
@@ -908,6 +911,8 @@ predictions_nye <- predictions_nye |>
     er_helligdag = factor(er_helligdag, levels = levels(vff_all$er_helligdag))
   )
 
+# datasæt med de rigtige variabler for hvert tidspunkt før kampstart
+
 nye_1m <- predictions_nye |> 
   select(-d10_tilskuere, -d7_tilskuere, -d3_tilskuere)
 
@@ -920,14 +925,16 @@ nye_d7 <- predictions_nye |>
 nye_d3 <- predictions_nye |> 
   select(-d10_tilskuere, -d7_tilskuere)
 
-x_nye_1m <- model.matrix(tilskuere ~ ., data = nye_1m)[, -1]
+# predictions for de nye kampe, lavet på de modeller der performede bedst på hvert tidspunkt
+
+x_nye_1m <- model.matrix(~ ., data = nye_1m)[, -1]
 nye_pred_1m <- predict(final_ridge_1m, newx = x_nye_1m)
 
-x_nye_d10 <- model.matrix(tilskuere ~ ., data = nye_d10)[, -1]
+x_nye_d10 <- model.matrix(~ ., data = nye_d10)[, -1]
 nye_pred_d10 <- predict(final_lasso_d10, newx = x_nye_d10)
 
-x_nye_d7 <- model.matrix(tilskuere ~ ., data = nye_d7)[, -1]
+x_nye_d7 <- model.matrix(~ ., data = nye_d7)[, -1]
 nye_pred_d7 <- predict(final_lasso_d7, newx = x_nye_d7)
 
-x_nye_d3 <- model.matrix(tilskuere ~ ., data = nye_d3)[, -1]
+x_nye_d3 <- model.matrix(~ ., data = nye_d3)[, -1]
 nye_pred_d3 <- predict(final_lasso_d3, s = bestlambda_lasso_d3, newx = x_nye_d3)
