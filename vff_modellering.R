@@ -85,7 +85,6 @@ pred_full_1m <- predict(lm_full_1m,
 # test MSE
 
 testmse_full_1m <- mean((vff_test_1m$tilskuere - pred_full_1m)^2)
-sqrt(testmse_full_1m)
 
 ## 10 dage inden kampstart ------------------------------------------------
 
@@ -99,7 +98,6 @@ pred_full_d10 <- predict(lm_full_d10,
 # test MSE
 
 testmse_full_d10 <- mean((vff_test_d10$tilskuere - pred_full_d10)^2)
-sqrt(testmse_full_d10)
 
 ## 7 dage inden kampstart ------------------------------------------------
 
@@ -113,7 +111,6 @@ pred_full_d7 <- predict(lm_full_d7,
 # test MSE
 
 testmse_full_d7 <- mean((vff_test_d7$tilskuere - pred_full_d7)^2)
-sqrt(testmse_full_d7)
 
 ## 3 dage inden kampstart ------------------------------------------------
 
@@ -127,7 +124,6 @@ predict_full_d3 <- predict(lm_full_d3,
 # test MSE
 
 testmse_full_d3 <- mean((vff_test_d3$tilskuere - predict_full_d3)^2)
-sqrt(testmse_full_d3)
 
 # forward selection ------------------------------------------------------
 
@@ -151,8 +147,7 @@ for (j in 1:k) {
   best.fit <- regsubsets(tilskuere ~ .,
                          data = vff_train_1m[folds != j, ],
                          nvmax = nvmax,
-                         method = "forward",
-                         really.big = TRUE)
+                         method = "forward")
   
     n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
   # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
@@ -174,13 +169,11 @@ best_nvars_1m_fwd <- which.min(mean.cv.errors)
 best_fwd_1m <- regsubsets(tilskuere ~ .,
                          data = vff_train_1m,
                          nvmax = nvmax,
-                         method = "forward",
-                         really.big = TRUE)
+                         method = "forward")
 
 pred_fwd_1m <- predict(best_fwd_1m, vff_test_1m, id = best_nvars_1m_fwd)
 
 testmse_fwd_1m <- mean((vff_test_1m$tilskuere - pred_fwd_1m)^2)
-sqrt(testmse_fwd_1m)
 
 ## model for 10 dage før kampstart --------------------------------------------------
 
@@ -219,13 +212,11 @@ best_nvars_d10_fwd <- which.min(mean.cv.errors)
 best_fwd_d10 <- regsubsets(tilskuere ~ .,
                          data = vff_train_d10,
                          nvmax = nvmax,
-                         method = "forward",
-                         really.big = TRUE)
+                         method = "forward")
 
 pred_fwd_d10 <- predict(best_fwd_d10, vff_test_d10, id = best_nvars_d10_fwd)
 
 testmse_fwd_d10 <- mean((vff_test_d10$tilskuere - pred_fwd_d10)^2)
-sqrt(testmse_fwd_d10)
 
 ## model for 7 dage før kampstart --------------------------------------------------
 
@@ -264,13 +255,11 @@ best_nvars_d7_fwd <- which.min(mean.cv.errors)
 best_fwd_d7 <- regsubsets(tilskuere ~ .,
                          data = vff_train_d7,
                          nvmax = nvmax,
-                         method = "forward",
-                         really.big = TRUE)
+                         method = "forward")
 
 pred_fwd_d7 <- predict(best_fwd_d7, vff_test_d7, id = best_nvars_d7_fwd)
 
 testmse_fwd_d7 <- mean((vff_test_d7$tilskuere - pred_fwd_d7)^2)
-sqrt(testmse_fwd_d7)
 
 ## model for 3 dage før kampstart --------------------------------------------------
 
@@ -309,13 +298,11 @@ best_nvars_d3_fwd <- which.min(mean.cv.errors)
 best_fwd_d3 <- regsubsets(tilskuere ~ .,
                          data = vff_train_d3,
                          nvmax = nvmax,
-                         method = "forward",
-                         really.big = TRUE)
+                         method = "forward")
 
 pred_fwd_d3 <- predict(best_fwd_d3, vff_test_d3, id = best_nvars_d3_fwd)
 
 testmse_fwd_d3 <- mean((vff_test_d3$tilskuere - pred_fwd_d3)^2)
-sqrt(testmse_fwd_d3)
 
 # backward selection ------------------------------------------------------
 
@@ -339,8 +326,7 @@ for (j in 1:k) {
   best.fit <- regsubsets(tilskuere ~ .,
                          data = vff_train_1m[folds != j, ],
                          nvmax = nvmax,
-                         method = "backward",
-                         really.big = TRUE)
+                         method = "backward")
   
     n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
   # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
@@ -362,15 +348,13 @@ best_nvars_1m_bwd <- which.min(mean.cv.errors)
 best_bwd_1m <- regsubsets(tilskuere ~ .,
                          data = vff_train_1m,
                          nvmax = nvmax,
-                         method = "backward",
-                         really.big = TRUE)
+                         method = "backward")
 
 coef(best_bwd_1m, best_nvars_1m_bwd)
 
 pred_bwd_1m <- predict(best_bwd_1m, vff_test_1m, id = best_nvars_1m_bwd)
 
 testmse_bwd_1m <- mean((vff_test_1m$tilskuere - pred_bwd_1m)^2)
-sqrt(testmse_bwd_1m)
 
 ## model for 10 dage før kampstart --------------------------------------------------
 
@@ -409,13 +393,11 @@ best_nvars_d10_bwd <- which.min(mean.cv.errors)
 best_bwd_d10 <- regsubsets(tilskuere ~ .,
                          data = vff_train_d10,
                          nvmax = nvmax,
-                         method = "backward",
-                         really.big = TRUE)
+                         method = "backward")
 
 pred_bwd_d10 <- predict(best_bwd_d10, vff_test_d10, id = best_nvars_d10_bwd)
 
 testmse_bwd_d10 <- mean((vff_test_d10$tilskuere - pred_bwd_d10)^2)
-sqrt(testmse_bwd_d10)
 
 ## model for 7 dage før kampstart --------------------------------------------------
 
@@ -454,13 +436,11 @@ best_nvars_d7_bwd <- which.min(mean.cv.errors)
 best_bwd_d7 <- regsubsets(tilskuere ~ .,
                          data = vff_train_d7,
                          nvmax = nvmax,
-                         method = "backward",
-                         really.big = TRUE)
+                         method = "backward")
 
 pred_bwd_d7 <- predict(best_bwd_d7, vff_test_d7, id = best_nvars_d7_bwd)
 
 testmse_bwd_d7 <- mean((vff_test_d7$tilskuere - pred_bwd_d7)^2)
-sqrt(testmse_bwd_d7)
 
 ## model for 3 dage før kampstart --------------------------------------------------
 
@@ -499,13 +479,11 @@ best_nvars_d3_bwd <- which.min(mean.cv.errors)
 best_bwd_d3 <- regsubsets(tilskuere ~ .,
                          data = vff_train_d3,
                          nvmax = nvmax,
-                         method = "forward",
-                         really.big = TRUE)
+                         method = "backward")
 
 pred_bwd_d3 <- predict(best_bwd_d3, vff_test_d3, id = best_nvars_d3_bwd)
 
 testmse_bwd_d3 <- mean((vff_test_d3$tilskuere - pred_bwd_d3)^2)
-sqrt(testmse_bwd_d3)
 
 # ridge og lasso regression ------------------------------------------------------------
 
@@ -549,7 +527,6 @@ ridge_pred_1m <- predict(final_ridge_1m, s = bestlambda_ridge_1m, newx = x_test_
 # test MSE
 
 testmse_ridge_1m <- mean((vff_test_1m$tilskuere - ridge_pred_1m)^2)
-sqrt(testmse_ridge_1m)
 
 ### lasso regression -------------------------------------------------------
 
@@ -580,7 +557,6 @@ lasso_pred_1m <- predict(final_lasso_1m, s = bestlambda_lasso_1m, newx = x_test_
 # test MSE
 
 testmse_lasso_1m <- mean((vff_test_1m$tilskuere - lasso_pred_1m)^2)
-sqrt(testmse_lasso_1m)
 
 ## modeller for 10 dage inden kampen -----------------------------------------
 
@@ -622,7 +598,6 @@ ridge_pred_d10 <- predict(final_ridge_d10, s = bestlambda_ridge_d10, newx = x_te
 # test MSE
 
 testmse_ridge_d10 <- mean((vff_test_d10$tilskuere - ridge_pred_d10)^2)
-sqrt(testmse_ridge_d10)
 
 ### lasso regression -------------------------------------------------------
 
@@ -640,7 +615,7 @@ lassolambda_1se_d10 <- cv_lasso_d10$lambda.1se
 
 # endelige model
 
-final_lasso_d10 <- glmnet(x_train_d10, y_train_d10, alpha = 1, lambda = bestlambda_lasso_1m)
+final_lasso_d10 <- glmnet(x_train_d10, y_train_d10, alpha = 1, lambda = bestlambda_lasso_d10)
 
 # modellens koefficienter
 
@@ -653,7 +628,6 @@ lasso_pred_d10 <- predict(final_lasso_d10, s = bestlambda_lasso_d10, newx = x_te
 # test MSE
 
 testmse_lasso_d10 <- mean((vff_test_d10$tilskuere - lasso_pred_d10)^2)
-sqrt(testmse_lasso_d10)
 
 ## modeller for 7 dage inden kampen -----------------------------------------
 
@@ -695,7 +669,6 @@ ridge_pred_d7 <- predict(final_ridge_d7, s = bestlambda_ridge_d7, newx = x_test_
 # test MSE
 
 testmse_ridge_d7 <- mean((vff_test_d7$tilskuere - ridge_pred_d7)^2)
-sqrt(testmse_ridge_d7)
 
 ### lasso regression -------------------------------------------------------
 
@@ -726,7 +699,6 @@ lasso_pred_d7 <- predict(final_lasso_d7, s = bestlambda_lasso_d7, newx = x_test_
 # test MSE
 
 testmse_lasso_d7 <- mean((vff_test_d7$tilskuere - lasso_pred_d7)^2)
-sqrt(testmse_lasso_d7)
 
 ## modeller for 3 dage inden kampen -----------------------------------------
 
@@ -768,7 +740,6 @@ ridge_pred_d3 <- predict(final_ridge_d3, s = bestlambda_ridge_d3, newx = x_test_
 # test MSE
 
 testmse_ridge_d3 <- mean((vff_test_d3$tilskuere - ridge_pred_d3)^2)
-sqrt(testmse_ridge_d3)
 
 ### lasso regression -------------------------------------------------------
 
@@ -799,9 +770,10 @@ lasso_pred_d3 <- predict(final_lasso_d3, s = bestlambda_lasso_d3, newx = x_test_
 # test MSE
 
 testmse_lasso_d3 <- mean((vff_test_d3$tilskuere - lasso_pred_d3)^2)
-sqrt(testmse_lasso_d3)
 
+# visualiseringer af MSE og RMSE -----------------------------------------
 
+# laver dataframes med MSE og RMSE for alle modellerne
 test_mse_df <- data.frame(
   måned1 = c(testmse_full_1m, testmse_fwd_1m, testmse_bwd_1m, testmse_ridge_1m, testmse_lasso_1m),
   dag10 = c(testmse_full_d10, testmse_fwd_d10, testmse_bwd_d10, testmse_ridge_d10, testmse_lasso_d10),
@@ -810,7 +782,6 @@ test_mse_df <- data.frame(
   row.names = c("Full Linear", "Forward Selection", "Backward Selection", 
             "Ridge", "Lasso")
 )
-print(test_mse_df)
 
 test_rmse_df <- data.frame(
   måned1 = c(sqrt(testmse_full_1m), sqrt(testmse_fwd_1m), sqrt(testmse_bwd_1m), sqrt(testmse_ridge_1m), sqrt(testmse_lasso_1m)),
@@ -829,6 +800,8 @@ best_models <- data.frame(
 
 best_models
 
+# laver plots over sammenligninger på modellerne
+
 test_rmse_long <- test_rmse_df |> 
   rownames_to_column("Model") |>
   pivot_longer(cols = -Model, names_to = "Timeframe", values_to = "RMSE")
@@ -840,7 +813,7 @@ test_rmse_long <- test_rmse_long |>
       levels = c("måned1", "dag10", "dag7", "dag3")
     ))
 
-ggplot(test_mse_long, aes(x = RMSE, y = reorder(Model, -RMSE), fill = Model)) +
+ggplot(test_rmse_long, aes(x = RMSE, y = reorder(Model, -RMSE), fill = Model)) +
   geom_col(show.legend = FALSE) +
   geom_text(aes(label = round(RMSE, 0)), hjust = -0.2, size = 3.5) +
   facet_wrap(~Timeframe, scales = "free_x", ncol = 2,
@@ -895,3 +868,66 @@ ggplot(test_rmse_long_best,
   theme(plot.title = element_text(face = "bold")) +
   scale_fill_brewer(palette = "Set2")
 
+# nye predictions
+
+predictions_nye <- data.frame(
+  ugedag = c("Søn", "Søn"),
+  tilskuere = c(7702, 6299),
+  vff_resultat_lagged = c("uafgjort", "tabt"),
+  mål_sidste_kamp = c(1, 1),
+  sæson_år = c("2025", "2025"),
+  runde_nr = c(20, 22),
+  mål_sidste3_lagged = c(6, 2),
+  point_sæson_lagged = c(25, 25),
+  point_sidste3_lagged = c(2, 3),
+  tidspunkt = c("aften", "eftermiddag"),
+  sidste_møde_tilskuere = c(7658, 6290),
+  modstander = c("BIF", "FCN"),
+  sidste_møde_resultat = c("vundet", "tabt"),
+  temp_dry = c(2, 10),
+  wind_speed = c(6.8, 2.4),
+  precip_past1h = c(1.0, 0.1),
+  er_helligdag = c(0, 0),
+  d10_tilskuere = c(4587, 2764),
+  d7_tilskuere = c(5021, 3291),
+  d3_tilskuere = c(5383, 3872),
+  sommerferie = c(0, 0),
+  måned = c(2, 3),
+  uge_nr = c(7, 9)
+)
+
+predictions_nye <- predictions_nye |> 
+  mutate(
+    ugedag = factor(ugedag, levels = levels(vff_all$ugedag)),
+    vff_resultat_lagged = factor(vff_resultat_lagged, levels = levels(vff_all$vff_resultat_lagged)),
+    sæson_år = factor(sæson_år, levels = levels(vff_all$sæson_år)),
+    tidspunkt = factor(tidspunkt, levels = levels(vff_all$tidspunkt)),
+    modstander = factor(modstander, levels = levels(vff_all$modstander)),
+    sidste_møde_resultat = factor(sidste_møde_resultat, levels = levels(vff_all$sidste_møde_resultat)),
+    sommerferie = factor(sommerferie, levels = levels(vff_all$sommerferie)),
+    er_helligdag = factor(er_helligdag, levels = levels(vff_all$er_helligdag))
+  )
+
+nye_1m <- predictions_nye |> 
+  select(-d10_tilskuere, -d7_tilskuere, -d3_tilskuere)
+
+nye_d10 <- predictions_nye |> 
+  select(-d7_tilskuere, -d3_tilskuere)
+
+nye_d7 <- predictions_nye |> 
+  select(-d10_tilskuere, -d3_tilskuere)
+
+nye_d3 <- predictions_nye |> 
+  select(-d10_tilskuere, -d7_tilskuere)
+
+x_nye_1m <- model.matrix(tilskuere ~ ., data = nye_1m)[, -1]
+nye_pred_1m <- predict(final_ridge_1m, newx = x_nye_1m)
+
+x_nye_d10 <- model.matrix(tilskuere ~ ., data = nye_d10)[, -1]
+nye_pred_d10 <- predict(final_lasso_d10, newx = x_nye_d10)
+
+x_nye_d7 <- model.matrix(tilskuere ~ ., data = nye_d7)[, -1]
+nye_pred_d7 <- predict(final_lasso_d7, newx = x_nye_d7)
+
+x_nye_d3 <- model.matrix(tilskuere ~ ., data = nye_d3)[, -1]
+nye_pred_d3 <- predict(final_lasso_d3, s = bestlambda_lasso_d3, newx = x_nye_d3)

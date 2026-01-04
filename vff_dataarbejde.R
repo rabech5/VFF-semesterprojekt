@@ -25,10 +25,6 @@ for (i in 2002:2026) {
   seasons[[as.character(i)]] <- tables
 }
 
-# sletter tables
-
-tables <- NULL
-
 # renser navne på tabellerne med janitor for at kunne arbejde videre med dem
 
 for(season_år in names(seasons)) {
@@ -215,7 +211,7 @@ seasons_all <- seasons_all |>
 seasons_all <- seasons_all |> 
   mutate(
     tidspunkt = if_else(hour(datotid) %in% 10:14, "middag", NA),
-    tidspunkt = if_else(hour(datotid) %in% 15:18, "eftermiddag", tidspunkt),
+    tidspunkt = if_else(hour(datotid) %in% 15:17, "eftermiddag", tidspunkt),
     tidspunkt = if_else(hour(datotid) %in% 18:23, "aften", tidspunkt)
   )
 
@@ -353,11 +349,6 @@ for (dato in dmi_dato) {
 
  dato_vejr[[as.character(dato)]] <- api_JSON
 }
-
-# sletter api_call og api_JSON
-
-api_call <- NULL
-api_JSON <- NULL
 
 # vejrdataen ligger i dataframes, som ligger i andre dataframes, som ligger i lister,
 # der ligger i en liste. der er heldigvis mønstre og ens navngivninger, så
@@ -562,8 +553,3 @@ vff_all <- vff_all |>
   mutate(across(where(is.character), as.factor))
 
 write_rds(vff_all, "data/vff_all.rds")
-
-
-
-
-
