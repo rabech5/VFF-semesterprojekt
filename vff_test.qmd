@@ -1,0 +1,1791 @@
+---
+lang: en
+format:
+  pdf:
+    documentclass: article
+    toc: true
+    toc-title: Indholdsfortegnelse
+    toc-depth: 3
+    number-sections: true
+    number-depth: 3
+    titlepage: true
+    lof: true
+    lot: true
+    linestretch: 1.5
+bibliography: vffbib.bib
+header-includes:
+  - \usepackage[a4paper, top=30mm, bottom=30mm, left=20mm, right=20mm, heightrounded]{geometry}
+  - \usepackage{booktabs}
+  - \usepackage{makecell}
+  - \usepackage{pdfpages}
+  - \AtBeginDocument{\includepdf[pages={1}]{vff_forside.pdf}}
+crossref:
+  fig-prefix: ""
+  sec-prefix: ""
+  tbl-prefix: ""
+  eq-prefix: ""
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+#| label: Setup
+#| echo: false
+#| eval: true
+
+# Options
+options(OutDec = ",")
+
+# Pakker
+pacman::p_load("knitr", "tinytex", "tidyverse") 
+```
+
+\pagenumbering{gobble} 
+\tableofcontents 
+\newpage 
+\listoffigures 
+\listoftables 
+\newpage 
+\pagenumbering{arabic} 
+\setcounter{page}{1}
+
+# Læsevejledning
+
+Denne synopsis er udarbejdet i forbindelse med 1. semesterprøven på
+Dataanalyse uddannelsen hos Erhvervsakademi Dania. Projektet er lavet af
+gruppe 2, bestående af Dennis Bork Kjeldsen, Martin Munk Laigaard,
+Rasmus Bech Poulsen og Sebastian Krog Husted.
+
+Analyserne i synopsen baseres på mere dybdegående analyser, som kan
+findes i bilagene, sammen med den kommenterede kode. I synopsen vil der
+fremover blive brugt forkortelser, sådan at Viborg F.F. omtales som VFF,
+og machine learning omtales som ML.
+
+\newpage
+
+# Problemstilling {#sec-problemstilling}
+
+I den moderne sport spiller dataanalyse en central rolle i
+beslutningsprocesser for at understøtte strategiske og kommercielle
+beslutninger for klubberne som virksomheder. Ved VFF kan evnen til at
+forudsige tilskuertal ved hjemmekampe bidrage til at optimere
+billetsalg, markedsføring og planlægning af ressourcer til kampene,
+blandt andet gennem mad, øl og personale på kampdagene.
+
+Den kommercielle afdeling har længe haft udfordringer med at forudsige
+billetsalget til klubbens hjemmebane, hvilket er en nøglefaktor for
+ressourceplanlægning, markedsføring og reducering af madspild – hvilket
+alt sammen har direkte indflydelse på klubbens finansielle resultat. For
+at imødekomme denne udfordring, har afdelingen et ønske om at udvikle en
+ML-model, der kan forudsige billetsalget en måned, 10 dage, 7 dage og 3
+dage før kampstart ved at tage højde for faktorer som modstanderhold,
+vejrudsigt og akkumulerede point for sæsonen. Modellen skal fungere som
+beslutningsværktøj for at optimere ressourceplanlægning.
+
+For at benytte en sådan model til dens fulde potentiale, afhænger det
+dog også i høj grad af den praktiske implementering, som i sig selv også
+er dybt afhængig af klubbens datamodenhed, data governance og
+organisationsstruktur. Dette skaber altså et behov for at forstå hvordan
+en teknisk løsning af denne type kan tilpasses og implementeres til lige
+netop VFF's organisatoriske virkelighed. Dette projekt vil derfor ikke
+blot undersøge hvordan den optimale model bygges, men også hvordan det
+sikres at modellen kan implementeres i virksomheden, og integreres i
+klubbens daglige praksis på en måde hvor den skaber reel værdi som et
+beslutningsværktøj.
+
+## Problemformulering {#sec-pf}
+
+Hvordan kan VFF styrke deres beslutningsgrundlag for billetsalg,
+markedsføring og ressourceplanlægning, ved at udvikle og implementere en
+optimal ML-model der kan forudsige tilskuertallet til hjemmekampe på
+forskellige tidspunkter før kampstart?
+
+## Undersøgelsesspørgsmål
+
+1.  Hvilket niveau af datamodenhed har VFF på nuværende tidspunkt?
+2.  Hvilken ML-model forudsiger bedst tilskuerantal?
+3.  Hvordan kan modellen tilpasses VFF's datamodenhed og organisation
+    for at skabe værdi i den kommercielle afdeling?
+
+\newpage
+
+# Videnskabsteori og metode
+
+For at kunne undersøge både de tekniske og forretningsmæssige aspekter
+af problemstillingen, anvender vi to forskellige videnskabsteoretiske
+tilgange. Projektet bygger derfor på et kombineret videnskabsteoretisk
+afsæt, hvor både positivismen og hermeneutikken spiller en rolle i hver
+deres del af projektet.
+
+I den tekniske del anvendes en positivistisk tilgang til at forudsige
+tilskuertal ved hjælp af ML og kvantitative data. Formålet er at skabe
+et objektivt beslutningsgrundlag for VFF gennem målbare metrikker som
+MSE/RMSE. For at sikre høj reliabilitet og reproducerbarhed anvendes
+set.seed [@james_islr]. Tilgangen er valgt, da den hjælper med
+verificeringen af virkeligheden gennem systematiske metoder
+[@livegholm_videnskabsteori].
+
+For at sikre at projektets praktiske værdiskabelse undersøges VFF's
+organisatoriske forhold, herunder deres kommercielle behov, data
+governance og datamodenhed. På baggrund af den hermeneutiske tilgang
+forstås viden som en fortolkningsprocess betinget af aktørernes
+erfaringer, holdninger og praksis [@livegholm_videnskabsteori]. Gennem
+tematisk kodning af interviews og præsentationer analyseres kvalitative
+data for at identifcere oplevede behov og barrierer i VFFs nuværende
+beslutningsprocesser [@hecker_code_interviews]. Denne kvalitative
+indsigt sikrer, at ML-løsningen ikke blot fungerer teknisk, men også er
+meningsfuld og implenterbar i VFF's specifikke organisatoriske kontekst.
+
+Kombinationen af disse to tilgange sikrer en helhedsforståelse, hvor den
+positivistiske del leverer objektive analyser og forudsigelser, mens den
+hermeneutiske tilgang har fokus på den praktiske anvendelse i
+organisationen. Samlet set gør denne tilgang det muligt at besvare
+problemformuleringen balanceret og understøtte VFF's ambition om øget
+datamodehed og udvikle sig til en datadrevet organisation
+[@livegholm_videnskabsteori].
+
+Dette projekt anvender kvantitative og kvalitative metoder, for at
+identificere faktorer der påvirker tilskuertallet ved VFF's hjemmekampe.
+Formålet med metoden er at skabe et datadrevet grundlag for analysen og
+samtidig supplere de informationer og indsigter fra VFF selv.
+
+Den kvantitative data indhentes fra eksterne kilder som Superstats
+anvendt til kamp- og tilskuerdata, DMI til vejrdata og Date.nager til
+information om helligdage. Kilderne bidrager med vigtige variabler, der
+kan påvirke tilskuertallet, såsom modstanderhold, vejrforhold og
+kalender relaterede faktorer. For at sikre høj reliabilitet, importeres
+og lagres data i gruppens SQL database. I databasen renses den rå data,
+der håndteres manglende værdier og ensretning af formater. Den endelige
+databehandling og modellering foregår i Rstudio.
+
+Den kvalitative del af metoden består primært af et interview med VFF
+samt materiale fra klubbens præsentationer. Disse kvalitative data
+fungerer som et supplement til de kvantitative fund og bruges til at
+perspektivere resultaterne, fx ved at identificere faktorer, som ikke
+umiddelbart kan måles direkte i de indsamlede data.
+
+\newpage
+
+# Analyse
+
+## Data Governance
+
+Dette afsnit er baseret på den fulde data governance analyse, som kan
+findes i [@bilagxxx].
+
+Analysen for VFF viser, at der er en tydelig strategisk forståelse af
+data som en værdiskabende ressource, der skal understøtte sportslige og
+kommercielle beslutninger, herunder kampdagsprædiktioner og
+ressourceplanlægning. Missionen om at anvende data effektivt, sikkert og
+struktureret er tydelig hos Daniel og Olga. Data governance er dog endnu
+ikke formaliseret i organisationen, men praktiseres i høj grad gennem
+uformelle arbejdsgange og individuel viden.
+
+Kvalitetssikring, validering og dokumentation af data udføres primært
+manuelt, og der findes kun få automatiske kontroller. Dette øger
+sårbarheden for VFF´s datakvalitet og risikoen for at de tager
+beslutninger på fejlagtige grundlag. Manglen på fælles datadefinitioner,
+faste regler for datastrukturer og ensartet dokumentation har tidligere
+medført, at automatiserede løsninger er blevet vanskelige at genanvende.
+Organisationen mangler at implementere Data Governance og dermed fordele
+ansvarsområder. Daniel skal fremover agere som Data Governance Officer i
+VFF. Han skal skabe en håndbog med retningslinjer og datatilgang
+beskrivelser som skal introduceres for organisationens forskellige
+afdelinger.
+
+Samlet set har VFF en klar strategisk ambition om at anvende data som
+beslutningsgrundlag, men manglende formaliseret data governance,
+personafhængighed, manuelle kontroller og et fragmenteret
+systemlandskab. For at kunne højne organisationens datamodenhed skal de
+ovenstående tiltag implementeres.
+
+## Datamodenhed
+
+Dette afsnit er baseret på den fulde datamodenhedsanalyse, som kan
+findes i [@bilagxxx].
+
+På baggrund af data governance-analysen og gennemførte interviews
+vurderes VFF at befinde sig i den accelererende del af fase 2 (Lære om
+forretningen) af Alexandra Instituttets datamodenhedsmodel.
+Organisationen anvender i stigende grad data til at træffe sportslige og
+kommercielle beslutninger. Dog udtrykker Daniel, at de er længere, men
+en lang række faktorer holder dem tilbage fra at opnå ønsket resultater.
+
+Deres tankegang og mål ligger i fase 3 og 4, men grundet silotænkning og
+mangelfuld datahåndteringsprocedure vil Daniel skulle påtage sig rollen
+som Data Governance Officer og indsætte regler for datahåndtering.
+Datakvalitetssikring og vedligeholdelse varetages primært af to
+nøglepersoner, hvilket medfører sårbarhed og begrænser skalerbarhed for
+VFF. Dette er ikke foreneligt med overgang til fase 3, hvor Data
+Governance, roller og processer er formaliseret gennem en håndbog.
+
+VFF viser en tydelig ambition om at anvende data mere som et
+konkurrenceparameter, men deres nuværende bemanding i dataafdelingen
+begrænser mulighederne for at automatisere og videreudvikle processer.
+Den manglende kapacitet betyder, at VFF vil forblive i den udførende del
+af data frem for at benytte det strategisk.
+
+Samlet set anvender VFF data aktivt til læring og beslutningsstøtte, men
+manglende formaliseret Data Governance, automatisering,
+systemintegration og organisatorisk kapacitet betyder, at klubben
+fortsat befinder sig i fase 2 og endnu ikke kan operere på fase
+3-niveau.
+
+## Sammenligning og vurdering af modeller
+
+Der er blevet testet og trænet 5 forskellige modeltyper på tværs af 4
+forskellige tidshorisonter før kampstart. Disse modeller evalueres her
+på baggrund af RMSE, for at kunne sammenligne dem på den mest
+fortolkelige metrik [@james_islr].
+
+![Model sammenligning over forskellige prediction
+tidspunkter.](fig_model_sammenligning.png){#fig-model-sammenligning
+width="80%"}
+
+Som det fremgår af [@fig-model-sammenligning], ser man et tydeligt
+mønster på tværs af modellerne. En undtagelse ses dog ved de modeller
+der forsøger at forudsige 1 måned før kampstart, hvor Ridge tager
+føringen, da den opnår en lavere RMSE end både Lasso og de andre
+modeller. Dvs. at når der skal forudsiges 10, 7 eller 3 dage før
+kampstart, er det Lasso der performer bedst i test, mens det ved
+forudsigelse 1 måned inden kampstart er Ridge der performer bedst i
+test.
+
+![Bedst performende ML-modeller - sammenligning på tværs af tid før
+kampstart.](fig_bedst_performende.png){#fig-bedst-performende
+width="70%"}
+
+For at vurdere de bedst performende modeller fokuseres der fortsat på
+RMSE som evalueringsmetrik. Som [@fig-bedst-performende] viser, sker der
+allerede fra 1 måned til 10 dage en betydelig forbedring. Denne
+forbedring kan primært tilskrives inkluderingen af de nye variabler for
+det faktiske billetsalg før kampstart. Med disse variabler får
+modellerne et meget præcist og retvisende pejlemærke, der skaber større
+præcision i forudsigelserne.
+
+RMSE-værdien på 1064 ved prædiktioner en måned før kampstart indikerer
+en gennemsnitlig afvigelse på over 1.000 tilskuere. Uden adgang til
+præcise billetsalgsdata har disse langsigtede forudsigelser begrænset
+operational værdi, da fejlmarginerne er for store til at danne et solidt
+beslutningsgrundlag for eksempelvis bemanding og indkøb.
+
+Når vi derimod kigger på 10, 7 og 3 dage før kampstart ses det at
+RMSE'erne ligger på hhv. 519, 370 og 196 tilskuere. Denne udvikling
+understreger, at modellens anvendelighed er tæt forbundet med
+tidshorisonten. De langsigtede forudsigelser giver primært et vejledende
+billede, hvor de kortsigtede giver et reelt billede af forventet
+tilskuere. Det vurderes at de kortsigtede modeller, der inddrager
+billetsalgsdata tæt på kampstart, er bedst til at understøtte konkrete
+beslutninger om ressourceplanlægning i VFF's kommercielle afdeling.
+
+\newpage
+
+# Væsentligste konklusioner
+
+Analysen placerer VFF i fase 2 af datamodenhedsmodellen. Selvom data
+anvendes i beslutninger, sænkes udviklingen af manglende data
+governance, høj personafhængighed og uklare strukturer, som
+dataudviklingen styres af få personer. Disse organisatoriske faktorer er
+afgørende for, hvordan en ML-løsning kan implementeres og skabe reel
+værdi.
+
+Resultaterne viser, at modellernes præcision er tæt forbundet med
+tidshorisonten, da inkluderingen af billetsalgsdata markant forbedrer
+performance. Ridge-modellen performer bedst ved en måned før, mens
+Lasso-modellen leverer de mest præcise resultater tæt på kampstart,
+altså 10, 7 og 3 dage før kampstart. De lave RMSE-værdier tæt på
+kampdagen gør disse modeller velegnet som beslutningsgrundlag, mens de
+langsigtede fungerer som en vejledende mulighed.
+
+Det konkluderes at VFF kan styrke deres kommercielle fundament ved at
+bruge ML som et værktøj tæt på kampstart. For at få fuldt udbytte af
+modellen skal den indføres gradvist og støttes af faste aftaler om
+dokumentation, ansvar og data governance. Ved at koble de tekniske
+forudsigelser med klubbens faktiske arbejdsgange kan VFF begrænse
+ressourcespild, tage mere præcise beslutninger og derfor være et skridt
+tættere på at blive en mere datadrevet organisation.
+
+\newpage
+
+# Litteraturliste
+
+::: {#refs}
+:::
+
+\newpage
+\appendix
+
+# Bilag
+
+## Dataklargøring
+
+```{r}
+#| label: pakker-setup
+#| echo: true
+#| eval: false
+#| message: false
+#| warning: false
+
+# Load packages
+pacman::p_load(tidyverse, rvest, janitor, RSQLite, slider)
+```
+
+```{r}
+#| label: superstats-data
+#| echo: true
+#| eval: false
+
+# Link til superstats, uden sæson år (kommer i loop funktion)
+url <- "https://superstats.dk/program?season="
+
+# Laver en tom liste som tabellerne skal ligge i
+seasons 
+    html_element("#content") |>
+    html_elements("table") |>
+    html_table()
+
+  seasons[[as.character(i)]]  
+      setNames(c("ugedag", "dato_tid", "kamp", "resultat", "tilskuere", 
+                 "dommer", "tv", "sæson_år", "runde_nr"))
+  )
+}
+
+# Får fejl da det ikke er alle observationer i ugedag og kamp der er samme type
+# Alle observationer i ugedag og kamp tvinges derfor til at være character
+for(season_år in names(seasons)) {
+  seasons[[season_år]]  mutate(ugedag = as.character(ugedag),
+                       kamp = as.character(kamp))
+      )
+}
+
+# Samler tabellerne i en enkelt dataframe
+seasons_all  
+  flatten() |> 
+  bind_rows()
+
+# Tilskuere blive i ovenstående funktion lavet til en double, 
+# men står ikke længere i 1000'er
+# Tilskuere variabel laves derfor i 1000'er i stedet for
+seasons_all  
+  mutate(tilskuere = tilskuere * 1000)
+```
+
+```{r}
+#| label: upload-superstats
+#| echo: true
+#| eval: false
+
+# Uploader alle superstatsdata til SQLite database
+con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
+dbWriteTable(con, "db_seasons_all", seasons_all, overwrite = TRUE)
+dbListTables(con)
+dbDisconnect(con)
+```
+
+```{r}
+#| label: feature-engineering
+#| echo: true
+#| eval: false
+
+# Henter data alle superliga kampe fra database
+con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
+seasons_all  
+  filter(str_detect(kamp, "VFF-") | str_detect(kamp, "-VFF"))
+
+# Opdeler resultat variablen i to, sådan at hjemmeholdets mål 
+# og udeholdets mål står for sig selv
+seasons_all 
+  separate_wider_delim(
+    resultat,
+    delim = "-",
+    names = c("hjemme_mål", "ude_mål"),
+    too_few = "debug"
+  )
+
+# Laver ny variabel for VFF's mål og lagged version
+seasons_all 
+  mutate(
+    vff_mål = as.numeric(if_else(str_detect(kamp, "VFF-"), hjemme_mål, ude_mål)),
+    .after = kamp
+  ) |> 
+  mutate(
+    mål_sidste_kamp = as.numeric(lag(vff_mål)),
+    .after = vff_mål
+  )
+
+# Ny variabel for mål i de sidste tre kampe ved at bruge slider package
+seasons_all  
+  mutate(
+    mål_sidste_tre = slide_dbl(vff_mål, sum, .before = 2, .complete = TRUE)
+  )
+
+seasons_all  
+  mutate(
+    mål_sidste3_lagged = lag(mål_sidste_tre)
+  )
+
+# Laver resultat og lagged resultat variabel
+seasons_all  
+  mutate(
+    vff_resultat = if_else(str_detect(kamp, "-VFF") & hjemme_mål > ude_mål, "tabt", NA),
+    .after = kamp,
+    vff_resultat = if_else(str_detect(kamp, "-VFF") & hjemme_mål < ude_mål, "vundet", vff_resultat), 
+    vff_resultat = if_else(str_detect(kamp, "-VFF") & hjemme_mål == ude_mål, "uafgjort", vff_resultat),
+    vff_resultat = if_else(str_detect(kamp, "VFF-") & hjemme_mål > ude_mål, "vundet", vff_resultat),
+    vff_resultat = if_else(str_detect(kamp, "VFF-") & hjemme_mål < ude_mål, "tabt", vff_resultat),
+    vff_resultat = if_else(str_detect(kamp, "VFF-") & hjemme_mål == ude_mål, "uafgjort", vff_resultat),
+    vff_resultat_lagged = lag(vff_resultat)
+  )
+
+# Laver ny variabel for antal point
+seasons_all  
+  mutate(
+    point_kamp = if_else(str_detect(vff_resultat, "tabt"), 0, NA ),
+    .after = vff_resultat_lagged,
+    point_kamp = if_else(str_detect(vff_resultat, "uafgjort"), 1, point_kamp),
+    point_kamp = if_else(str_detect(vff_resultat, "vundet"), 3, point_kamp)
+  )
+
+# Ny variabel for antal point i de sidste tre kampe
+seasons_all  
+  mutate(
+    point_sidste3 = slide_dbl(point_kamp, sum, .before = 2, .complete = TRUE),
+    .after = point_kamp
+  )
+
+seasons_all  
+  mutate(
+    point_sidste3_lagged = lag(point_sidste3)
+  )
+
+# Ny variabel for aggregerede point for hver sæson
+seasons_all  
+  group_by(sæson_år) |> 
+  mutate(
+    point_sæson = slide_dbl(point_kamp, sum, .before = Inf, .complete = FALSE)
+  ) |> 
+  ungroup()
+
+seasons_all  
+  mutate(
+    point_sæson_lagged = lag(point_sæson)
+  )
+```
+
+```{r}
+#| label: datotid-variabler
+#| echo: true
+#| eval: false
+
+# Laver det reelle år kampene blev spillet i stedet for sæsonåret
+seasons_all  
+ mutate(
+    real_år = if_else(str_detect(dato_tid, "/(07|08|09|10|11|12) "), 
+                     as.numeric(sæson_år) - 1, as.numeric(sæson_år))
+  ) |> 
+  mutate(datotid = ydm_hm(paste(real_år, dato_tid), tz = "Europe/Copenhagen")) |> 
+  mutate(datotid_utc = with_tz(datotid, tzone = "UTC"))
+
+# Laver ny variabel for hvilket tidspunkt på dagen det er
+seasons_all  
+  mutate(
+    tidspunkt = if_else(hour(datotid) %in% 10:14, "middag", NA),
+    tidspunkt = if_else(hour(datotid) %in% 15:17, "eftermiddag", tidspunkt),
+    tidspunkt = if_else(hour(datotid) %in% 18:23, "aften", tidspunkt)
+  )
+```
+
+```{r}
+#| label: sidste-moede
+#| echo: true
+#| eval: false
+
+# Nye variabler for sidste møde mellem holdene
+seasons_all  
+  group_by(kamp) |> 
+  mutate(
+    sidste_møde_tilskuere = lag(tilskuere)
+  ) |> 
+  ungroup()
+
+# Finder modstanderen og laver variabel for resultatet i sidste møde
+seasons_all  
+  mutate(kamp2 = kamp) |> 
+  separate_wider_delim(
+    kamp2,
+    delim = "-",
+    names = c("hjemme", "ude")
+  ) |> 
+  mutate(
+    modstander = if_else(str_detect(hjemme, "VFF"), ude, hjemme)
+  ) |> 
+  group_by(modstander) |> 
+  mutate(sidste_møde_resultat = lag(vff_resultat)) |> 
+  ungroup()
+
+# Fjerner sæsoner før 2003 da der ikke findes alt relevant vejr data
+seasons_all  
+  filter(as.numeric(sæson_år) >= 2003)
+```
+
+```{r}
+#| label: dmi-format
+#| echo: true
+#| eval: false
+
+# Laver ny variabel i DMI API format
+seasons_all  
+  mutate(datotidutc = datotid_utc) |> 
+  separate_wider_delim(
+    datotidutc,
+    delim = " ",
+    names = c("dato_dag_only", "dato_tid_only")
+  ) |> 
+  mutate(dmi_dato = paste0(dato_dag_only, "T", dato_tid_only, "Z"))
+
+# Ændrer alle tider til nærmeste hele time
+seasons_all  
+  mutate(datotid_utc = floor_date(datotid_utc, unit = "hour")) |> 
+  select(-dato_dag_only, -dato_tid_only) |> 
+  separate_wider_delim(
+    datotid_utc,
+    delim = " ",
+    names = c("dato_dag_only", "dato_tid_only")
+  ) |> 
+  mutate(dmi_dato = paste0(dato_dag_only, "T", dato_tid_only, "Z"))
+
+# Uploader datasættet i databasen
+con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
+dbWriteTable(con, "db_seasons_all", seasons_all, overwrite = TRUE)
+dbDisconnect(con)
+```
+
+```{r}
+#| label: dmi-data
+#| echo: true
+#| eval: false
+
+# Udvælger VFF hjemmekampe til DMI loop
+
+vff_hjemme <- seasons_all |>
+filter(str_detect(kamp, "VFF-")) |>
+filter(!is.na(resultat)) |>
+filter(resultat != "Optakt")
+
+dmi_dato <- vff_hjemme |>
+select(dmi_dato) |>
+pull()
+
+# Bygger URL op
+
+base_url <- "[https://dmigw.govcloud.dk/v2/](https://dmigw.govcloud.dk/v2/)"
+info_url <- "metObs/collections/observation/items?"
+req_url <- "stationId=06060&datetime="
+limit <- "&limit=100000"
+api_key <- Sys.getenv("MY_API_KEY")
+
+# Tom liste til vejrdata
+
+dato_vejr <- list()
+
+# Loop hvor vejrdata for alle kamptider hentes
+
+for (dato in dmi_dato) {
+full_url <- paste0(
+base_url, info_url, req_url, dato, limit, "&api-key=", api_key
+)
+
+api_call <- httr::GET(full_url)
+api_JSON <- httr::content(api_call, as = "parsed", simplifyVector = TRUE)
+
+dato_vejr[[as.character(dato)]] <- api_JSON
+}
+
+# Rydder op
+
+api_call <- NULL
+api_JSON <- NULL
+```
+
+```{r}
+#| label: dmi-processering
+#| echo: true
+#| eval: false
+
+# Ekstraher properties fra hver API-respons
+
+properties <- lapply(dato_vejr, function(x) x$features$properties)
+
+# Samler alle vejrdata i én dataframe
+
+vejr_alle <- bind_rows(properties)
+
+# Gemmer rå vejrdata i SQLite
+
+con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
+dbWriteTable(con, "db_vejr_alle", vejr_alle, overwrite = TRUE)
+vejr_alle <- dbReadTable(con, "db_vejr_alle")
+dbDisconnect(con)
+```
+
+```{r}
+#| label: dmi-udvalg
+#| echo: true
+#| eval: false
+
+vejr_udvalgt <- vejr_alle |>
+filter(parameterId %in% c("precip_past1h", "temp_dry", "wind_speed")) |>
+select(parameterId, value, observed) |>
+pivot_wider(
+names_from = parameterId,
+values_from = value
+)
+
+# Gemmer udvalgte vejrdata
+
+con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
+dbWriteTable(con, "db_vejr_udvalgte", vejr_udvalgt, overwrite = TRUE)
+dbDisconnect(con)
+```
+
+```{r}
+#| label: date-nager
+#| echo: true
+#| eval: false
+
+base_url_dn <- "[https://date.nager.at/api/v3/PublicHolidays/](https://date.nager.at/api/v3/PublicHolidays/)"
+country_code <- "/DK"
+
+holidays <- list()
+
+for (i in 2002:2025) {
+full_url <- paste0(base_url_dn, i, country_code)
+
+api_call <- httr::GET(full_url)
+api_JSON <- httr::content(api_call, as = "parsed", simplifyVector = TRUE)
+
+holidays[[as.character(i)]] <- api_JSON
+}
+
+holidays <- holidays |>
+bind_rows() |>
+mutate(
+dato = date,
+helligdag = localName
+) |>
+select(dato, helligdag)
+
+con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
+dbWriteTable(con, "db_holidays", holidays, overwrite = TRUE)
+dbDisconnect(con)
+```
+
+```{r}
+#| label: join-data
+#| echo: true
+#| eval: false
+
+con <- dbConnect(SQLite(), "data/fodbolddata.sqlite")
+
+vff_all <- dbGetQuery(con,
+"SELECT s.*, r.temp_dry, r.wind_speed, r.precip_past1h, g.helligdag,
+t.d10_tilskuere, t.d7_tilskuere, t.d3_tilskuere
+FROM db_seasons_all AS s
+LEFT JOIN db_vejr_udvalgte AS r
+ON s.dmi_dato = r.observed
+LEFT JOIN db_holidays AS g
+ON s.dato_dag_only = g.dato
+LEFT JOIN db_vff AS t
+ON s.real_år = t.år
+AND s.runde_nr = t.runde
+WHERE s.kamp LIKE '%VFF-%'"
+)
+
+dbDisconnect(con)
+```
+
+```{r}
+#| label: final-clean
+#| echo: true
+#| eval: false
+
+vff_all <- vff_all |>
+filter(!is.na(resultat), resultat != "Optakt") |>
+mutate(datotid = as.POSIXct(datotid)) |>
+mutate(
+helligdag = if_else(is.na(helligdag), "ingen", helligdag),
+sommerferie = as.factor(
+if_else(
+month(datotid) == 7 |
+(month(datotid) == 6 & day(datotid) >= 26) |
+(month(datotid) == 8 & day(datotid) <= 12),
+1, 0
+)
+),
+sæson_år = as.factor(sæson_år),
+måned = month(datotid),
+uge_nr = week(datotid)
+) |>
+filter(!is.na(precip_past1h)) |>
+select(-datotid) |>
+mutate(across(where(is.character), as.factor))
+
+write_rds(vff_all, "data/vff_all.rds")
+```
+
+## Modellering
+
+```{r}
+#| echo: true
+#| eval: false
+# prerequisites ----------------------------------------------------------
+# load packages
+
+pacman::p_load(tidyverse, rvest, janitor, RSQLite, slider, leaps, glmnet)
+
+# indlæser data fra rds fil
+
+vff_all <- read_rds("data/vff_all.rds")
+
+# for at sørge for der ikke opstår problemer med factor levels, som findes i testsættet
+# men ikke i træningssættet, laves helligdagsvariablen om til om der blot var en hvilken som helst
+# helligdag på dagen, eller ej. derefter grupperes de levels i modstander variablen, der kun optræder
+# en enkelt gang, sådan at de får et fælles niveau
+
+vff_all <- vff_all |> 
+  mutate(
+    er_helligdag = as.factor(if_else(helligdag == "ingen", 0, 1)),
+    modstander = fct_lump_min(modstander, min = 2, other_level = "andre_hold")
+  ) |> 
+  select(-helligdag)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+# sætter et seed
+
+set.seed(2)
+
+# opdeler dataen i træningssæt og testsæt
+
+train_size <- floor(0.7 * nrow(vff_all))
+
+train_data <- sample(nrow(vff_all), size = train_size)
+
+test_data <- -train_data
+
+vff_train <- vff_all[train_data, ]
+
+vff_test <- vff_all[test_data, ]
+
+# opdeler datasættene, sådan at vi får de datasæt vi skal bruge 
+# for at forudsige 1 måned før, 10 dage før, 7 dage før og 3 dage før
+
+vff_train_1m <- vff_train |> 
+  select(-d10_tilskuere, -d7_tilskuere, -d3_tilskuere)
+
+vff_train_d10 <- vff_train |> 
+  select(-d7_tilskuere, -d3_tilskuere)
+
+vff_train_d7 <- vff_train |> 
+  select(-d10_tilskuere, -d3_tilskuere)
+
+vff_train_d3 <- vff_train |> 
+  select(-d10_tilskuere, -d7_tilskuere)
+
+vff_test_1m <- vff_test |> 
+  select(-d10_tilskuere, -d7_tilskuere, -d3_tilskuere)
+
+vff_test_d10 <- vff_test |> 
+  select(-d7_tilskuere, -d3_tilskuere)
+
+vff_test_d7 <- vff_test |> 
+  select(-d10_tilskuere, -d3_tilskuere)
+
+vff_test_d3 <- vff_test |> 
+  select(-d10_tilskuere, -d7_tilskuere)
+
+# opretter en funktion til at lave de predictede værdier
+
+predict.regsubsets <- function(object, newdata, id, ...) {
+  form <- as.formula(object$call[[2]])
+  mat <- model.matrix(form, newdata)
+  coefi <- coef(object, id = id)
+  xvars <- names(coefi)
+  mat[, xvars] %*% coefi
+}
+```
+
+```{r}
+#| echo: true
+#| eval: false
+# fuld linear model ------------------------------------------------------
+
+lm_full_1m <- lm(tilskuere ~ ., vff_train_1m)
+
+# finder predictede værdier
+
+pred_full_1m <- predict(lm_full_1m, 
+                        vff_test_1m)
+
+# test MSE
+
+testmse_full_1m <- mean((vff_test_1m$tilskuere - pred_full_1m)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## 10 dage inden kampstart ------------------------------------------------
+
+lm_full_d10 <- lm(tilskuere ~ ., vff_train_d10)
+
+# finder de predictede værdier
+
+pred_full_d10 <- predict(lm_full_d10, 
+                         vff_test_d10)
+
+# test MSE
+
+testmse_full_d10 <- mean((vff_test_d10$tilskuere - pred_full_d10)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## 7 dage inden kampstart ------------------------------------------------
+
+lm_full_d7 <- lm(tilskuere ~ ., vff_train_d7)
+
+# finder de predictede værdier
+
+pred_full_d7 <- predict(lm_full_d7, 
+                        vff_test_d7)
+
+# test MSE
+
+testmse_full_d7 <- mean((vff_test_d7$tilskuere - pred_full_d7)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## 3 dage inden kampstart ------------------------------------------------
+
+lm_full_d3 <- lm(tilskuere ~ ., vff_train_d3)
+
+# finder de predictede værdier
+
+predict_full_d3 <- predict(lm_full_d3, 
+                           vff_test_d3)
+
+# test MSE
+
+testmse_full_d3 <- mean((vff_test_d3$tilskuere - predict_full_d3)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+# forward selection ------------------------------------------------------
+
+k <- 10 # Vi danner 10 folds
+n <- nrow(vff_train) # registrerer hvor mange observationer, vi har.
+
+folds <- sample(rep(1:k, length = n)) #Vi tildeler en værdi mellem 1 og
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## model for 1 måned før kampstart --------------------------------------------------
+
+# laver en model matrix, for at finde nvmax, altså den maksimale variabelstørrele på kandidatmodellerne
+
+model_matrix <- model.matrix(tilskuere ~ ., data = vff_train_1m)[, -1]
+
+nvmax <- ncol(model_matrix)
+
+cv.errors <- matrix(NA, k, nvmax,
+                    dimnames = list(NULL, paste(1:nvmax)))
+
+for (j in 1:k) {
+  best.fit <- regsubsets(tilskuere ~ .,
+                         data = vff_train_1m[folds != j, ],
+                         nvmax = nvmax,
+                         method = "forward")
+  
+    n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
+  # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
+  # af loopet
+  
+  for (i in 1:n_models) {
+    pred <- predict(best.fit, vff_train_1m[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean) # apply er en smart funktion, der 
+# gennemløber alle rækker og tager gennemsnittet henover hver søjle, som svarer 
+# til hver kandidatmodel.
+mean.cv.errors # vi får færre end 51 kandidatmodeller pga. kollinearitet
+
+best_nvars_1m_fwd <- which.min(mean.cv.errors)
+
+best_fwd_1m <- regsubsets(tilskuere ~ .,
+                         data = vff_train_1m,
+                         nvmax = nvmax,
+                         method = "forward")
+
+pred_fwd_1m <- predict(best_fwd_1m, vff_test_1m, id = best_nvars_1m_fwd)
+
+testmse_fwd_1m <- mean((vff_test_1m$tilskuere - pred_fwd_1m)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## model for 10 dage før kampstart --------------------------------------------------
+
+# laver en model matrix, for at finde nvmax, altså den maksimale variabelstørrele på kandidatmodellerne
+
+model_matrix <- model.matrix(tilskuere ~ ., data = vff_train_d10)[ , -1]
+
+nvmax <- ncol(model_matrix)
+
+cv.errors <- matrix(NA, k, nvmax,
+                    dimnames = list(NULL, paste(1:nvmax)))
+
+for (j in 1:k) {
+  best.fit <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d10[folds != j, ],
+                         nvmax = nvmax,
+                         method = "forward")
+  
+  n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
+  # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
+  # af loopet
+  
+  for (i in 1:n_models) {
+    pred <- predict(best.fit, vff_train_d10[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean) # apply er en smart funktion, der 
+# gennemløber alle rækker og tager gennemsnittet henover hver søjle, som svarer 
+# til hver kandidatmodel.
+mean.cv.errors # vi får færre end 51 kandidatmodeller pga. kollinearitet
+
+best_nvars_d10_fwd <- which.min(mean.cv.errors)
+
+best_fwd_d10 <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d10,
+                         nvmax = nvmax,
+                         method = "forward")
+
+pred_fwd_d10 <- predict(best_fwd_d10, vff_test_d10, id = best_nvars_d10_fwd)
+
+testmse_fwd_d10 <- mean((vff_test_d10$tilskuere - pred_fwd_d10)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## model for 7 dage før kampstart --------------------------------------------------
+
+# laver en model matrix, for at finde nvmax, altså den maksimale variabelstørrele på kandidatmodellerne
+
+model_matrix <- model.matrix(tilskuere ~ ., data = vff_train_d7)[ , -1]
+
+nvmax <- ncol(model_matrix)
+
+cv.errors <- matrix(NA, k, nvmax,
+                    dimnames = list(NULL, paste(1:nvmax)))
+
+for (j in 1:k) {
+  best.fit <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d7[folds != j, ],
+                         nvmax = nvmax,
+                         method = "forward")
+  
+  n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
+  # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
+  # af loopet
+  
+  for (i in 1:n_models) {
+    pred <- predict(best.fit, vff_train_d7[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean) # apply er en smart funktion, der 
+# gennemløber alle rækker og tager gennemsnittet henover hver søjle, som svarer 
+# til hver kandidatmodel.
+mean.cv.errors # vi får færre end 51 kandidatmodeller pga. kollinearitet
+
+best_nvars_d7_fwd <- which.min(mean.cv.errors)
+
+best_fwd_d7 <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d7,
+                         nvmax = nvmax,
+                         method = "forward")
+
+pred_fwd_d7 <- predict(best_fwd_d7, vff_test_d7, id = best_nvars_d7_fwd)
+
+testmse_fwd_d7 <- mean((vff_test_d7$tilskuere - pred_fwd_d7)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## model for 3 dage før kampstart --------------------------------------------------
+
+# laver en model matrix, for at finde nvmax, altså den maksimale variabelstørrele på kandidatmodellerne
+
+model_matrix <- model.matrix(tilskuere ~ ., data = vff_train_d3)[ , -1]
+
+nvmax <- ncol(model_matrix)
+
+cv.errors <- matrix(NA, k, nvmax,
+                    dimnames = list(NULL, paste(1:nvmax)))
+
+for (j in 1:k) {
+  best.fit <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d3[folds != j, ],
+                         nvmax = nvmax,
+                         method = "forward")
+  
+  n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
+  # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
+  # af loopet
+  
+  for (i in 1:n_models) {
+    pred <- predict(best.fit, vff_train_d3[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean) # apply er en smart funktion, der 
+# gennemløber alle rækker og tager gennemsnittet henover hver søjle, som svarer 
+# til hver kandidatmodel.
+mean.cv.errors # vi får færre end 51 kandidatmodeller pga. kollinearitet
+
+best_nvars_d3_fwd <- which.min(mean.cv.errors)
+
+best_fwd_d3 <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d3,
+                         nvmax = nvmax,
+                         method = "forward")
+
+pred_fwd_d3 <- predict(best_fwd_d3, vff_test_d3, id = best_nvars_d3_fwd)
+
+testmse_fwd_d3 <- mean((vff_test_d3$tilskuere - pred_fwd_d3)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+# backward selection ------------------------------------------------------
+
+k <- 10 # Vi danner 10 folds
+n <- nrow(vff_train) # registrerer hvor mange observationer, vi har.
+
+folds <- sample(rep(1:k, length = n)) #Vi tildeler en værdi mellem 1 og
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## model for 1 måned før kampstart --------------------------------------------------
+
+# laver en model matrix, for at finde nvmax, altså den maksimale variabelstørrele på kandidatmodellerne
+
+model_matrix <- model.matrix(tilskuere ~ ., data = vff_train_1m)[, -1]
+
+nvmax <- ncol(model_matrix)
+
+cv.errors <- matrix(NA, k, nvmax,
+                    dimnames = list(NULL, paste(1:nvmax)))
+
+for (j in 1:k) {
+  best.fit <- regsubsets(tilskuere ~ .,
+                         data = vff_train_1m[folds != j, ],
+                         nvmax = nvmax,
+                         method = "backward")
+  
+    n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
+  # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
+  # af loopet
+  
+  for (i in 1:n_models) {
+    pred <- predict(best.fit, vff_train_1m[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean) # apply er en smart funktion, der 
+# gennemløber alle rækker og tager gennemsnittet henover hver søjle, som svarer 
+# til hver kandidatmodel.
+mean.cv.errors # vi får færre end 51 kandidatmodeller pga. kollinearitet
+
+best_nvars_1m_bwd <- which.min(mean.cv.errors)
+
+best_bwd_1m <- regsubsets(tilskuere ~ .,
+                         data = vff_train_1m,
+                         nvmax = nvmax,
+                         method = "backward")
+
+coef(best_bwd_1m, best_nvars_1m_bwd)
+
+pred_bwd_1m <- predict(best_bwd_1m, vff_test_1m, id = best_nvars_1m_bwd)
+
+testmse_bwd_1m <- mean((vff_test_1m$tilskuere - pred_bwd_1m)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## model for 10 dage før kampstart --------------------------------------------------
+
+# laver en model matrix, for at finde nvmax, altså den maksimale variabelstørrele på kandidatmodellerne
+
+model_matrix <- model.matrix(tilskuere ~ ., data = vff_train_d10)[ , -1]
+
+nvmax <- ncol(model_matrix)
+
+cv.errors <- matrix(NA, k, nvmax,
+                    dimnames = list(NULL, paste(1:nvmax)))
+
+for (j in 1:k) {
+  best.fit <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d10[folds != j, ],
+                         nvmax = nvmax,
+                         method = "backward")
+  
+  n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
+  # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
+  # af loopet
+  
+  for (i in 1:n_models) {
+    pred <- predict(best.fit, vff_train_d10[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean) # apply er en smart funktion, der 
+# gennemløber alle rækker og tager gennemsnittet henover hver søjle, som svarer 
+# til hver kandidatmodel.
+mean.cv.errors # vi får færre end 51 kandidatmodeller pga. kollinearitet
+
+best_nvars_d10_bwd <- which.min(mean.cv.errors)
+
+best_bwd_d10 <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d10,
+                         nvmax = nvmax,
+                         method = "backward")
+
+pred_bwd_d10 <- predict(best_bwd_d10, vff_test_d10, id = best_nvars_d10_bwd)
+
+testmse_bwd_d10 <- mean((vff_test_d10$tilskuere - pred_bwd_d10)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## model for 7 dage før kampstart --------------------------------------------------
+
+# laver en model matrix, for at finde nvmax, altså den maksimale variabelstørrele på kandidatmodellerne
+
+model_matrix <- model.matrix(tilskuere ~ ., data = vff_train_d7)[ , -1]
+
+nvmax <- ncol(model_matrix)
+
+cv.errors <- matrix(NA, k, nvmax,
+                    dimnames = list(NULL, paste(1:nvmax)))
+
+for (j in 1:k) {
+  best.fit <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d7[folds != j, ],
+                         nvmax = nvmax,
+                         method = "backward")
+  
+  n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
+  # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
+  # af loopet
+  
+  for (i in 1:n_models) {
+    pred <- predict(best.fit, vff_train_d7[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean) # apply er en smart funktion, der 
+# gennemløber alle rækker og tager gennemsnittet henover hver søjle, som svarer 
+# til hver kandidatmodel.
+mean.cv.errors # vi får færre end 51 kandidatmodeller pga. kollinearitet
+
+best_nvars_d7_bwd <- which.min(mean.cv.errors)
+
+best_bwd_d7 <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d7,
+                         nvmax = nvmax,
+                         method = "backward")
+
+pred_bwd_d7 <- predict(best_bwd_d7, vff_test_d7, id = best_nvars_d7_bwd)
+
+testmse_bwd_d7 <- mean((vff_test_d7$tilskuere - pred_bwd_d7)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## model for 3 dage før kampstart --------------------------------------------------
+
+# laver en model matrix, for at finde nvmax, altså den maksimale variabelstørrele på kandidatmodellerne
+
+model_matrix <- model.matrix(tilskuere ~ ., data = vff_train_d3)[ , -1]
+
+nvmax <- ncol(model_matrix)
+
+cv.errors <- matrix(NA, k, nvmax,
+                    dimnames = list(NULL, paste(1:nvmax)))
+
+for (j in 1:k) {
+  best.fit <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d3[folds != j, ],
+                         nvmax = nvmax,
+                         method = "backward")
+  
+  n_models <- length(summary(best.fit)$which[,1]) # pga. multikollinnearitet laves der ikke det samme
+  # antal modeller i hver fold, så vi finder det reelle antal der laves i hver fold og bruger det i næste del
+  # af loopet
+  
+  for (i in 1:n_models) {
+    pred <- predict(best.fit, vff_train_d3[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean) # apply er en smart funktion, der 
+# gennemløber alle rækker og tager gennemsnittet henover hver søjle, som svarer 
+# til hver kandidatmodel.
+mean.cv.errors # vi får færre end 51 kandidatmodeller pga. kollinearitet
+
+best_nvars_d3_bwd <- which.min(mean.cv.errors)
+
+best_bwd_d3 <- regsubsets(tilskuere ~ .,
+                         data = vff_train_d3,
+                         nvmax = nvmax,
+                         method = "backward")
+
+pred_bwd_d3 <- predict(best_bwd_d3, vff_test_d3, id = best_nvars_d3_bwd)
+
+testmse_bwd_d3 <- mean((vff_test_d3$tilskuere - pred_bwd_d3)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+# ridge og lasso regression ------------------------------------------------------------
+
+## modeller for 1 måned inden kampen -----------------------------------------
+
+# opretter objekter for x variablerne og y variablen. x variablerne sættes i en matrice,
+# mens y blot er outputtet, her antal tilskuere
+
+x_train_1m <- model.matrix(tilskuere ~ ., data = vff_train_1m)[, -1]
+
+y_train_1m <- vff_train_1m$tilskuere
+
+x_test_1m <- model.matrix(tilskuere ~ ., data = vff_test_1m)[, -1]
+```
+
+```{r}
+#| echo: true
+#| eval: false
+### ridge regression -------------------------------------------------------
+
+# optimerer tuning parameteren med k-fold cross validation (10 folds), for at finde den bedste lambda
+
+cv_ridge_1m <- cv.glmnet(x_train_1m, y_train_1m, alpha = 0, nfolds = 10)
+
+# bedste lambda
+
+bestlambda_ridge_1m <- cv_ridge_1m$lambda.min
+
+# bedste lambda indenfor 1 standardafvigelse af den optimale lambda (simpleste model)
+
+ridgelambda_1se_1m <- cv_ridge_1m$lambda.1se
+
+# endelige model
+
+final_ridge_1m <- glmnet(x_train_1m, y_train_1m, alpha = 0, lambda = bestlambda_ridge_1m)
+
+# modellens koefficienter
+
+ridge_coefs_1m <- coef(final_ridge_1m)
+
+# predictede værdier
+
+ridge_pred_1m <- predict(final_ridge_1m, s = bestlambda_ridge_1m, newx = x_test_1m)
+
+# test MSE
+
+testmse_ridge_1m <- mean((vff_test_1m$tilskuere - ridge_pred_1m)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+### lasso regression -------------------------------------------------------
+
+# optimerer tuning parameteren med k-fold cross validation (10 folds), for at finde den bedste lambda
+
+cv_lasso_1m <- cv.glmnet(x_train_1m, y_train_1m, alpha = 1, nfolds = 10)
+
+# bedste lambda
+
+bestlambda_lasso_1m <- cv_lasso_1m$lambda.min
+
+# bedste lambda indenfor 1 standardafvigelse af den optimale lambda (simpleste model)
+
+lassolambda_1se_1m <- cv_lasso_1m$lambda.1se
+
+# endelige model
+
+final_lasso_1m <- glmnet(x_train_1m, y_train_1m, alpha = 1, lambda = bestlambda_lasso_1m)
+
+# modellens koefficienter
+
+lasso_coefs_1m <- coef(final_lasso_1m)
+
+# predictede værdier
+
+lasso_pred_1m <- predict(final_lasso_1m, s = bestlambda_lasso_1m, newx = x_test_1m)
+
+# test MSE
+
+testmse_lasso_1m <- mean((vff_test_1m$tilskuere - lasso_pred_1m)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## modeller for 10 dage inden kampen -----------------------------------------
+
+# opretter objekter for x variablerne og y variablen. x variablerne sættes i en matrice,
+# mens y blot er outputtet, her antal tilskuere
+
+x_train_d10 <- model.matrix(tilskuere ~ ., data = vff_train_d10)[, -1] 
+
+y_train_d10 <- vff_train_d10$tilskuere
+
+x_test_d10 <- model.matrix(tilskuere ~ ., data = vff_test_d10)[, -1]
+```
+
+```{r}
+#| echo: true
+#| eval: false
+### ridge regression -------------------------------------------------------
+
+# optimerer tuning parameteren med k-fold cross validation (10 folds), for at finde den bedste lambda
+
+cv_ridge_d10 <- cv.glmnet(x_train_d10, y_train_d10, alpha = 0, nfolds = 10)
+
+# bedste lambda
+
+bestlambda_ridge_d10 <- cv_ridge_d10$lambda.min
+
+# bedste lambda indenfor 1 standardafvigelse af den optimale lambda (simpleste model)
+
+ridgelambda_1se_d10 <- cv_ridge_d10$lambda.1se
+
+# endelige model
+
+final_ridge_d10 <- glmnet(x_train_d10, y_train_d10, alpha = 0, lambda = bestlambda_ridge_d10)
+
+# modellens koefficienter
+
+ridge_coefs_d10 <- coef(final_ridge_d10)
+
+# predictede værdier
+
+ridge_pred_d10 <- predict(final_ridge_d10, s = bestlambda_ridge_d10, newx = x_test_d10)
+
+# test MSE
+
+testmse_ridge_d10 <- mean((vff_test_d10$tilskuere - ridge_pred_d10)^2)
+
+```
+
+```{r}
+#| echo: true
+#| eval: false
+### lasso regression -------------------------------------------------------
+
+# optimerer tuning parameteren med k-fold cross validation (10 folds), for at finde den bedste lambda
+
+cv_lasso_d10 <- cv.glmnet(x_train_d10, y_train_d10, alpha = 1, nfolds = 10)
+
+# bedste lambda
+
+bestlambda_lasso_d10 <- cv_lasso_d10$lambda.min
+
+# bedste lambda indenfor 1 standardafvigelse af den optimale lambda (simpleste model)
+
+lassolambda_1se_d10 <- cv_lasso_d10$lambda.1se
+
+# endelige model
+
+final_lasso_d10 <- glmnet(x_train_d10, y_train_d10, alpha = 1, lambda = bestlambda_lasso_d10)
+
+# modellens koefficienter
+
+lasso_coefs_d10 <- coef(final_lasso_d10)
+
+# predictede værdier
+
+lasso_pred_d10 <- predict(final_lasso_d10, s = bestlambda_lasso_d10, newx = x_test_d10)
+
+# test MSE
+
+testmse_lasso_d10 <- mean((vff_test_d10$tilskuere - lasso_pred_d10)^2)
+
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## modeller for 7 dage inden kampen -----------------------------------------
+
+# opretter objekter for x variablerne og y variablen. x variablerne sættes i en matrice,
+# mens y blot er outputtet, her antal tilskuere
+
+x_train_d7 <- model.matrix(tilskuere ~ ., data = vff_train_d7)[, -1] 
+
+y_train_d7 <- vff_train_d7$tilskuere
+
+x_test_d7 <- model.matrix(tilskuere ~ ., data = vff_test_d7)[, -1]
+
+```
+
+```{r}
+#| echo: true
+#| eval: false
+### ridge regression -------------------------------------------------------
+
+# optimerer tuning parameteren med k-fold cross validation (10 folds), for at finde den bedste lambda
+
+cv_ridge_d7 <- cv.glmnet(x_train_d7, y_train_d7, alpha = 0, nfolds = 10)
+
+# bedste lambda
+
+bestlambda_ridge_d7 <- cv_ridge_d7$lambda.min
+
+# bedste lambda indenfor 1 standardafvigelse af den optimale lambda (simpleste model)
+
+ridgelambda_1se_d7 <- cv_ridge_d7$lambda.1se
+
+# endelige model
+
+final_ridge_d7 <- glmnet(x_train_d7, y_train_d7, alpha = 0, lambda = bestlambda_ridge_d7)
+
+# modellens koefficienter
+
+ridge_coefs_d7 <- coef(final_ridge_d7)
+
+# predictede værdier
+
+ridge_pred_d7 <- predict(final_ridge_d7, s = bestlambda_ridge_d7, newx = x_test_d7)
+
+# test MSE
+
+testmse_ridge_d7 <- mean((vff_test_d7$tilskuere - ridge_pred_d7)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+### lasso regression -------------------------------------------------------
+
+# optimerer tuning parameteren med k-fold cross validation (10 folds), for at finde den bedste lambda
+
+cv_lasso_d7 <- cv.glmnet(x_train_d7, y_train_d7, alpha = 1, nfolds = 10)
+
+# bedste lambda
+
+bestlambda_lasso_d7 <- cv_lasso_d7$lambda.min
+
+# bedste lambda indenfor 1 standardafvigelse af den optimale lambda (simpleste model)
+
+lassolambda_1se_d7 <- cv_lasso_d7$lambda.1se
+
+# endelige model
+
+final_lasso_d7 <- glmnet(x_train_d7, y_train_d7, alpha = 1, lambda = bestlambda_lasso_d7)
+
+# modellens koefficienter
+
+lasso_coefs_d7 <- coef(final_lasso_d7)
+
+# predictede værdier
+
+lasso_pred_d7 <- predict(final_lasso_d7, s = bestlambda_lasso_d7, newx = x_test_d7)
+
+# test MSE
+
+testmse_lasso_d7 <- mean((vff_test_d7$tilskuere - lasso_pred_d7)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+## modeller for 3 dage inden kampen -----------------------------------------
+
+# opretter objekter for x variablerne og y variablen. x variablerne sættes i en matrice,
+# mens y blot er outputtet, her antal tilskuere
+
+x_train_d3 <- model.matrix(tilskuere ~ ., data = vff_train_d3)[, -1] 
+
+y_train_d3 <- vff_train_d3$tilskuere
+
+x_test_d3 <- model.matrix(tilskuere ~ ., data = vff_test_d3)[, -1] 
+
+### ridge regression -------------------------------------------------------
+
+# optimerer tuning parameteren med k-fold cross validation (10 folds), for at finde den bedste lambda
+
+cv_ridge_d3 <- cv.glmnet(x_train_d3, y_train_d3, alpha = 0, nfolds = 10)
+
+# bedste lambda
+
+bestlambda_ridge_d3 <- cv_ridge_d3$lambda.min
+
+# bedste lambda indenfor 1 standardafvigelse af den optimale lambda (simpleste model)
+
+ridgelambda_1se_d3 <- cv_ridge_d3$lambda.1se
+
+# endelige model
+
+final_ridge_d3 <- glmnet(x_train_d3, y_train_d3, alpha = 0, lambda = bestlambda_ridge_d3)
+
+# modellens koefficienter
+
+ridge_coefs_d3 <- coef(final_ridge_d3)
+
+# predictede værdier
+
+ridge_pred_d3 <- predict(final_ridge_d3, s = bestlambda_ridge_d3, newx = x_test_d3)
+
+# test MSE
+
+testmse_ridge_d3 <- mean((vff_test_d3$tilskuere - ridge_pred_d3)^2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+### lasso regression -------------------------------------------------------
+
+# optimerer tuning parameteren med k-fold cross validation (10 folds), for at finde den bedste lambda
+
+cv_lasso_d3 <- cv.glmnet(x_train_d3, y_train_d3, alpha = 1, nfolds = 10)
+
+# bedste lambda
+
+bestlambda_lasso_d3 <- cv_lasso_d3$lambda.min
+
+# bedste lambda indenfor 1 standardafvigelse af den optimale lambda (simpleste model)
+
+lassolambda_1se_d3 <- cv_lasso_d3$lambda.1se
+
+# endelige model
+
+final_lasso_d3 <- glmnet(x_train_d3, y_train_d3, alpha = 1, lambda = bestlambda_lasso_d3)
+
+# modellens koefficienter
+
+lasso_coefs_d3 <- coef(final_lasso_d3)
+
+# predictede værdier
+
+lasso_pred_d3 <- predict(final_lasso_d3, s = bestlambda_lasso_d3, newx = x_test_d3)
+
+# test MSE
+
+testmse_lasso_d3 <- mean((vff_test_d3$tilskuere - lasso_pred_d3)^2)
+
+```
+
+```{r}
+#| echo: true
+#| eval: false
+# visualiseringer af MSE og RMSE -----------------------------------------
+
+# laver dataframes med MSE og RMSE for alle modellerne
+test_mse_df <- data.frame(
+  måned1 = c(testmse_full_1m, testmse_fwd_1m, testmse_bwd_1m, testmse_ridge_1m, testmse_lasso_1m),
+  dag10 = c(testmse_full_d10, testmse_fwd_d10, testmse_bwd_d10, testmse_ridge_d10, testmse_lasso_d10),
+  dag7 = c(testmse_full_d7, testmse_fwd_d7, testmse_bwd_d7, testmse_ridge_d7, testmse_lasso_d7),
+  dag3 = c(testmse_full_d3, testmse_fwd_d3, testmse_bwd_d3, testmse_ridge_d3, testmse_lasso_d3),
+  row.names = c("Full Linear", "Forward Selection", "Backward Selection", 
+            "Ridge", "Lasso")
+)
+
+test_rmse_df <- data.frame(
+  måned1 = c(sqrt(testmse_full_1m), sqrt(testmse_fwd_1m), sqrt(testmse_bwd_1m), sqrt(testmse_ridge_1m), sqrt(testmse_lasso_1m)),
+  dag10 = c(sqrt(testmse_full_d10), sqrt(testmse_fwd_d10), sqrt(testmse_bwd_d10), sqrt(testmse_ridge_d10), sqrt(testmse_lasso_d10)),
+  dag7 = c(sqrt(testmse_full_d7), sqrt(testmse_fwd_d7), sqrt(testmse_bwd_d7), sqrt(testmse_ridge_d7), sqrt(testmse_lasso_d7)),
+  dag3 = c(sqrt(testmse_full_d3), sqrt(testmse_fwd_d3), sqrt(testmse_bwd_d3), sqrt(testmse_ridge_d3), sqrt(testmse_lasso_d3)),
+  row.names = c("Full Linear", "Forward Selection", "Backward Selection", 
+            "Ridge", "Lasso")
+)
+
+best_models <- data.frame(
+  best_model = apply(test_mse_df, 2, function(x) rownames(test_mse_df)[which.min(x)]),
+  MSE = apply(test_mse_df, 2, min)
+) |> 
+  mutate(RMSE = sqrt(MSE))
+
+best_models
+
+# laver plots over sammenligninger på modellerne
+
+test_rmse_long <- test_rmse_df |> 
+  rownames_to_column("Model") |>
+  pivot_longer(cols = -Model, names_to = "Timeframe", values_to = "RMSE")
+
+test_rmse_long <- test_rmse_long |> 
+  mutate(
+    Timeframe = factor(
+      Timeframe,
+      levels = c("måned1", "dag10", "dag7", "dag3")
+    ))
+
+ggplot(test_rmse_long, aes(x = RMSE, y = reorder(Model, -RMSE), fill = Model)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = round(RMSE, 0)), hjust = -0.2, size = 3.5) +
+  facet_wrap(~Timeframe, scales = "free_x", ncol = 2,
+             labeller = labeller(Timeframe = c("dag3" = "3 Dage", "dag7" = "7 Dage",
+                                               "dag10" = "10 Dage", "måned1" = "1 Måned"))) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Model Sammenligning Over Forskellige Prediction Tidspunkter",
+       x = "Root Mean Squared Error (RMSE)",
+       y = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold", size = 12))
+
+test_rmse_long_best <- test_rmse_long |> 
+  filter((Model == "Ridge" & Timeframe == "måned1") | (Model == "Lasso" & Timeframe == "dag10") | 
+         (Model == "Lasso" & Timeframe == "dag7") | (Model == "Lasso" & Timeframe == "dag3"))
+
+test_rmse_long_best <- test_rmse_long_best |> 
+    mutate(
+    Timeframe = factor(Timeframe, 
+                       levels = c("måned1", "dag10", "dag7", "dag3"))
+  )
+
+test_rmse_long_best <- test_rmse_long_best |> 
+  mutate(
+    Timeframe = recode(
+      Timeframe,
+      "dag3"    = "3 Dage",
+      "dag7"    = "7 Dage",
+      "dag10"   = "10 Dage",
+      "måned1"  = "1 Måned"
+    ),
+    Timeframe = factor(
+      Timeframe,
+      levels = c("1 Måned", "10 Dage", "7 Dage", "3 Dage")
+    )
+  )
+
+ggplot(test_rmse_long_best,
+       aes(x = Timeframe, y = RMSE, fill = Model)) +
+  geom_col(width = 0.6) +
+  coord_flip() +
+  geom_text(aes(label = round(RMSE, 0)), hjust = -0.1, size = 5) +
+  labs(
+    title = "Bedst performende ML-modeller",
+    subtitle = "Sammenligning på tværs af tid før kampstart",
+    x = "Tid før kampstart",
+    y = "RMSE",
+    fill = "Model"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold")) +
+  scale_fill_brewer(palette = "Set2")
+```
+
+```{r}
+#| echo: true
+#| eval: false
+# nye predictions
+
+predictions_nye <- data.frame(
+  ugedag = c("Søn", "Søn"),
+  tilskuere = c(7702, 6299),
+  vff_resultat_lagged = c("uafgjort", "tabt"),
+  mål_sidste_kamp = c(1, 1),
+  sæson_år = c("2025", "2025"),
+  runde_nr = c(20, 22),
+  mål_sidste3_lagged = c(6, 2),
+  point_sæson_lagged = c(25, 25),
+  point_sidste3_lagged = c(2, 3),
+  tidspunkt = c("aften", "eftermiddag"),
+  sidste_møde_tilskuere = c(7658, 6290),
+  modstander = c("BIF", "FCN"),
+  sidste_møde_resultat = c("vundet", "tabt"),
+  temp_dry = c(2, 10),
+  wind_speed = c(6.8, 2.4),
+  precip_past1h = c(1.0, 0.1),
+  er_helligdag = c(0, 0),
+  d10_tilskuere = c(4587, 2764),
+  d7_tilskuere = c(5021, 3291),
+  d3_tilskuere = c(5383, 3872),
+  sommerferie = c(0, 0),
+  måned = c(2, 3),
+  uge_nr = c(7, 9)
+)
+
+predictions_nye <- predictions_nye |> 
+  mutate(
+    ugedag = factor(ugedag, levels = levels(vff_all$ugedag)),
+    vff_resultat_lagged = factor(vff_resultat_lagged, levels = levels(vff_all$vff_resultat_lagged)),
+    sæson_år = factor(sæson_år, levels = levels(vff_all$sæson_år)),
+    tidspunkt = factor(tidspunkt, levels = levels(vff_all$tidspunkt)),
+    modstander = factor(modstander, levels = levels(vff_all$modstander)),
+    sidste_møde_resultat = factor(sidste_møde_resultat, levels = levels(vff_all$sidste_møde_resultat)),
+    sommerferie = factor(sommerferie, levels = levels(vff_all$sommerferie)),
+    er_helligdag = factor(er_helligdag, levels = levels(vff_all$er_helligdag))
+  )
+
+nye_1m <- predictions_nye |> 
+  select(-d10_tilskuere, -d7_tilskuere, -d3_tilskuere)
+
+nye_d10 <- predictions_nye |> 
+  select(-d7_tilskuere, -d3_tilskuere)
+
+nye_d7 <- predictions_nye |> 
+  select(-d10_tilskuere, -d3_tilskuere)
+
+nye_d3 <- predictions_nye |> 
+  select(-d10_tilskuere, -d7_tilskuere)
+
+x_nye_1m <- model.matrix(tilskuere ~ ., data = nye_1m)[, -1]
+nye_pred_1m <- predict(final_ridge_1m, newx = x_nye_1m)
+
+x_nye_d10 <- model.matrix(tilskuere ~ ., data = nye_d10)[, -1]
+nye_pred_d10 <- predict(final_lasso_d10, newx = x_nye_d10)
+
+x_nye_d7 <- model.matrix(tilskuere ~ ., data = nye_d7)[, -1]
+nye_pred_d7 <- predict(final_lasso_d7, newx = x_nye_d7)
+
+x_nye_d3 <- model.matrix(tilskuere ~ ., data = nye_d3)[, -1]
+nye_pred_d3 <- predict(final_lasso_d3, s = bestlambda_lasso_d3, newx = x_nye_d3)
+```
+
