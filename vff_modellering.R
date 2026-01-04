@@ -870,30 +870,32 @@ ggplot(test_rmse_long_best,
 
 
 # nye predictions --------------------------------------------------------
-# nyt datasæt, for de to næste hjemmekampe i sæsonen, som endnu ikke er spillet
+# nyt datasæt for den næste hjemmekampe i sæsonen mod BIF, som endnu ikke er spillet
+# der er to observationer af den samme kamp, hvoraf den ene er et best case scenario 
+# og den anden er et worst case scenario
 
 predictions_nye <- data.frame(
   ugedag = c("Søn", "Søn"),
-  vff_resultat_lagged = c("uafgjort", "tabt"),
+  vff_resultat_lagged = c("uafgjort", "uafgjort"),
   mål_sidste_kamp = c(1, 1),
-  sæson_år = c("2025", "2025"),
-  runde_nr = c(20, 22),
-  mål_sidste3_lagged = c(6, 2),
-  point_sidste3_lagged = c(2, 3),
-  point_sæson_lagged = c(25, 25),
-  tidspunkt = c("aften", "eftermiddag"),
-  sidste_møde_tilskuere = c(7658, 6290),
-  modstander = c("BIF", "FCN"),
-  sidste_møde_resultat = c("vundet", "tabt"),
-  temp_dry = c(2, 10),
-  wind_speed = c(6.8, 2.4),
-  precip_past1h = c(1.0, 0.1),
+  sæson_år = c("2026", "2026"),
+  runde_nr = c(20, 20),
+  mål_sidste3_lagged = c(8, 3),
+  point_sidste3_lagged = c(5, 2),
+  point_sæson_lagged = c(27, 24),
+  tidspunkt = c("aften", "aften"),
+  sidste_møde_tilskuere = c(7658, 7658),
+  modstander = c("BIF", "BIF"),
+  sidste_møde_resultat = c("vundet", "vundet"),
+  temp_dry = c(8, -2),
+  wind_speed = c(0.1, 7.4),
+  precip_past1h = c(0, 1.5),
   d10_tilskuere = c(3987, 2264),
-  d7_tilskuere = c(4921, 3291),
-  d3_tilskuere = c(6283, 4672),
+  d7_tilskuere = c(5021, 3191),
+  d3_tilskuere = c(6183, 3972),
   sommerferie = c(0, 0),
-  måned = c(2, 3),
-  uge_nr = c(7, 9),
+  måned = c(2, 2),
+  uge_nr = c(7, 7),
   er_helligdag = c(0, 0)
 )
 
@@ -925,7 +927,7 @@ nye_d7 <- predictions_nye |>
 nye_d3 <- predictions_nye |> 
   select(-d10_tilskuere, -d7_tilskuere)
 
-# predictions for de nye kampe, lavet på de modeller der performede bedst på hvert tidspunkt
+# predictions for den nye kamp, lavet på de modeller der performede bedst på hvert tidspunkt
 
 x_nye_1m <- model.matrix(~ ., data = nye_1m)[, -1]
 nye_pred_1m <- predict(final_ridge_1m, newx = x_nye_1m)
@@ -938,3 +940,62 @@ nye_pred_d7 <- predict(final_lasso_d7, newx = x_nye_d7)
 
 x_nye_d3 <- model.matrix(~ ., data = nye_d3)[, -1]
 nye_pred_d3 <- predict(final_lasso_d3, s = bestlambda_lasso_d3, newx = x_nye_d3)
+
+# visualisering af de nye predictions
+# laver en dataframe med resultaterne fra predictions
+
+results <- data.frame(
+  Scenario = c("Best Case", "Worst Case"),
+  `1 Måned før` = c(nye_pred_1m[1], nye_pred_1m[2]),
+  `10 Måned før` = c(nye_pred_d10[1], nye_pred_d10[2]),
+  `7 Måned før` = c(nye_pred_d7[1], nye_pred_d7[2]),
+  `3 Måned før` = c(nye_pred_d3[1], nye_pred_d3[2]),
+  check.names = FALSE
+)
+
+results_long <- results |> 
+  pivot_longer(cols = -Scenario, names_to = "Timeframe", values_to = "Predicted_Attendance") |>
+  mutate(Timeframe = factor(Timeframe, levels = c("1 Måned før", "10 Måned før", 
+                                                    "7 Måned før", "3 Måned før")))
+
+results_long <- results_long |>
+  mutate(
+    days_before = case_when(
+      Timeframe == "1 Måned før" ~ 30,
+      Timeframe == "10 Måned før" ~ 10,
+      Timeframe == "7 Måned før" ~ 7,
+      Timeframe == "3 Måned før" ~ 3
+    ),
+    label_text = paste0(round(Predicted_Attendance, 0), " tilskuere\n(",
+                        days_before, " dage før)")
+  )
+
+# plot af resultater
+
+ggplot(results_long, aes(x = Timeframe, y = Predicted_Attendance, fill = Scenario)) +
+  geom_col(position = "dodge", width = 0.7, color = "white", linewidth = 0.8) +
+  geom_text(aes(label = paste0(round(Predicted_Attendance, 0), "\ntilskuere")), 
+            position = position_dodge(width = 0.7), 
+            vjust = -0.5, size = 4.5, fontface = "bold") +
+  scale_fill_manual(
+    values = c("Best Case" = "#4CAF50", "Worst Case" = "#F44336"),
+    labels = c("Bedste forhold", "Værste forhold")
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15)),
+                     labels = function(x) format(x, big.mark = ".", decimal.mark = ",")) +
+  labs(title = "Forudsigelser af VFF's næste hjemmekamp",
+       subtitle = "Samme kamp (VFF vs BIF), forskellige predictiontidspunkter og forhold",
+       x = NULL,
+       y = "Forudsiget antal tilskuere",
+       fill = "Scenarie") +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 15, margin = margin(b = 5)),
+    plot.subtitle = element_text(size = 11, color = "gray30", margin = margin(b = 15)),
+    plot.caption = element_text(hjust = 0, face = "italic", color = "gray50"),
+    axis.text.x = element_text(face = "bold", size = 11),
+    axis.title.y = element_text(face = "bold", margin = margin(r = 10)),
+    panel.grid.major.x = element_blank(),
+    legend.title = element_text(face = "bold")
+  )

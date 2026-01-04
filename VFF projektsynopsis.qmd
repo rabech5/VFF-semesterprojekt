@@ -463,3 +463,97 @@ Jeg vil egentlig gerne dele den og sige på et dashboard der der skal det sådan
 "Jeg tror jeg skal have specificeret dig hele til 10er, fordi hvis vi siger, at 10 det er den bedste i Superliga, så vil jeg måske sige, så er vi måske syv eller otte sådan realistisk."
 
 "Og hvad med for eksempel markedsføring afdeling og hvordan vi altså marketing, altså den der hedder mark, den der hedder salg, de refererer til hvad hedder det vores direktør dem der refererer til økonomidirektøren det er hvad hedder det os Palle øh HR og økonomi. Vi refererer til økonomidirektøren og resten refererer til den administrerende direktør og så er der nogle mellemledere kan man sige mellem"
+
+### Prædiktion på nye data
+
+```{r}
+#| label: prædiktioner-nyt-data
+#| echo: true
+#| eval: false
+
+# nye predictions --------------------------------------------------------
+# nyt datasæt for den næste hjemmekampe i sæsonen mod BIF, som endnu ikke er spillet
+# der er to observationer af den samme kamp, hvoraf den ene er et best case scenario 
+# og den anden er et worst case scenario
+
+predictions_nye <- data.frame(
+  ugedag = c("Søn", "Søn"),
+  vff_resultat_lagged = c("uafgjort", "uafgjort"),
+  mål_sidste_kamp = c(1, 1),
+  sæson_år = c("2026", "2026"),
+  runde_nr = c(20, 20),
+  mål_sidste3_lagged = c(8, 3),
+  point_sidste3_lagged = c(5, 2),
+  point_sæson_lagged = c(27, 24),
+  tidspunkt = c("aften", "aften"),
+  sidste_møde_tilskuere = c(7658, 7658),
+  modstander = c("BIF", "BIF"),
+  sidste_møde_resultat = c("vundet", "vundet"),
+  temp_dry = c(8, -2),
+  wind_speed = c(0.1, 7.4),
+  precip_past1h = c(0, 1.5),
+  d10_tilskuere = c(3987, 2264),
+  d7_tilskuere = c(5021, 3191),
+  d3_tilskuere = c(6183, 3972),
+  sommerferie = c(0, 0),
+  måned = c(2, 2),
+  uge_nr = c(7, 7),
+  er_helligdag = c(0, 0)
+)
+
+# sørger for at alt er faktorer, og at faktorerne har samme levels som det originale datasæt
+
+predictions_nye <- predictions_nye |> 
+  mutate(
+    ugedag = factor(ugedag, levels = levels(vff_all$ugedag)),
+    vff_resultat_lagged = factor(vff_resultat_lagged, 
+                                 levels = levels(vff_all$vff_resultat_lagged)),
+    sæson_år = factor(sæson_år, levels = levels(vff_all$sæson_år)),
+    tidspunkt = factor(tidspunkt, levels = levels(vff_all$tidspunkt)),
+    modstander = factor(modstander, levels = levels(vff_all$modstander)),
+    sidste_møde_resultat = factor(sidste_møde_resultat, 
+                                  levels = levels(vff_all$sidste_møde_resultat)),
+    sommerferie = factor(sommerferie, levels = levels(vff_all$sommerferie)),
+    er_helligdag = factor(er_helligdag, levels = levels(vff_all$er_helligdag))
+  )
+
+# datasæt med de rigtige variabler for hvert tidspunkt før kampstart
+
+nye_1m <- predictions_nye |> 
+  select(-d10_tilskuere, -d7_tilskuere, -d3_tilskuere)
+
+nye_d10 <- predictions_nye |> 
+  select(-d7_tilskuere, -d3_tilskuere)
+
+nye_d7 <- predictions_nye |> 
+  select(-d10_tilskuere, -d3_tilskuere)
+
+nye_d3 <- predictions_nye |> 
+  select(-d10_tilskuere, -d7_tilskuere)
+
+# predictions for den nye kamp, lavet på de modeller der performede bedst på hvert tidspunkt
+
+x_nye_1m <- model.matrix(~ ., data = nye_1m)[, -1]
+nye_pred_1m <- predict(final_ridge_1m, newx = x_nye_1m)
+
+x_nye_d10 <- model.matrix(~ ., data = nye_d10)[, -1]
+nye_pred_d10 <- predict(final_lasso_d10, newx = x_nye_d10)
+
+x_nye_d7 <- model.matrix(~ ., data = nye_d7)[, -1]
+nye_pred_d7 <- predict(final_lasso_d7, newx = x_nye_d7)
+
+x_nye_d3 <- model.matrix(~ ., data = nye_d3)[, -1]
+nye_pred_d3 <- predict(final_lasso_d3, s = bestlambda_lasso_d3, newx = x_nye_d3)
+```
+
+
+
+### Resultater af prædiktioner
+
+![Sammenligning af nye prædiktioner](predictionsplot.png){#fig-modelsammenligning width="100%"}
+
+For at illustrere hvordan nye prædiktioner kan ændre sig med forskellige observationer og på forskellige prædiktionstidspunkter, har vi opstillet to scenarier for VFF's næste hjemmekamp mod BIF. Der er opstillet et "Best case scenario", hvor forholdene er gode, hvilket vil sige at der er godt vejr (8°C, ingen regn, lav vind), god sportslig form i de seneste kampe (8 mål og 5 point i de sidste tre kampe) og højt billetsalg i dagene op til kampen (6,183 billeter). Derudover er der også opstillet et "Worst case scenario", hvor forholdene er betydeligt dårligere, og der altså er dårligt vejr (-2°C, regn og høj vindstyrke), dårligere sportslig form i de seneste kampe (3 mål og 2 point i de sidste tre kampe) og lavt billetsalg i dagene op til kampen (3,972 billeter).
+
+Plottet viser, at at prædiktionerne samlet set falder når man bevæger sig fra forudsigelser 1 måned inden kampstart til 3 dage før kampstart. Dette skal dog ikke tolkes som et fald i modellernes performance, men snarere som et udtryk for at prædiktionerne blivere mere præcise når mere informativ data inkluderes. Det er især inkluderingen af de faktiske billetsalgsdata tættere på kampdagene giver modellerne et stærkere grundlag for at forudsige tilskuertallene.
+Samtidig ses en voksende forskel i prædiktionerne mellem best case og worst case scenarierne, jo tættere man kommer på kampstart, hvilket igen kan forklares af inddragelsen af billetsalgsdataen. Ved forudsigelser måned før kampstart, indgår billetsalget endnu ikke i modellen, hvorfor prædiktionsforskel mellem de to scenarier kan forklares af variationer mellem vejrforholdene og den sportslige form. Når billetsalgsvariablerne derimod inkluderes, vokser prædiktionsforskellen mellem de to scenarier markant, hvilket indikerer at disse variabler har stor betydning for modellernes nøjagtighed. Når vi har et worst case scenarie hvor både billetsalget i dagene op til kampen er dårligt og de øvrige forhold også er, vil der altså forudsiges et endnu dårligere tilskuertal fordi variablen er så værdifuld for modellen, og vice versa.
+Ud fra dette kan det konkluderes, at billetsalgsdata er en afgørende variabel for prædiktionernes nøjagtighed og de forskelle der opstår mellem scenarier tæt på kampstart. I en forretningsmæssig kontekst betyder dette, at modellen i høj grad kan anvendes som et operationelt beslutningsværktøj i dagene op til kamp, hvor den kan give realistiske skøn for de forventede tilskuertal. Denne viden kan anvendes i planlægningen af bemanding, indkøb, og markedsføringsindsatser. Samtidig kan en scenarietænkning som denne, give den kommercielle afdeling mulighed for at arbejde proaktivt med forskellige udfald og dermed reducere spild.
