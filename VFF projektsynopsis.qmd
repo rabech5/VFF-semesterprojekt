@@ -1,0 +1,465 @@
+---
+lang: da
+format:
+  pdf:
+    documentclass: article
+    toc: false
+    toc-title: Indholdsfortegnelse
+    toc-depth: 3
+    number-sections: true
+    number-depth: 3
+    titlepage: true
+    lof: false
+    lot: false
+bibliography: vffbib.bib
+header-includes:
+  - \usepackage[a4paper, top=30mm, bottom=30mm, left=20mm, right=20mm, heightrounded]{geometry}
+  - \usepackage{booktabs}
+  - \usepackage{makecell}
+  - \usepackage{pdfpages}
+crossref:
+  fig-prefix: ""
+  sec-prefix: ""
+  tbl-prefix: ""
+  eq-prefix: ""
+editor: 
+  markdown: 
+    wrap: 72
+nocite: |
+  @bang_datadriven, @datagovernanceinstitute_dgi, @alexandra_find, @wickham_r4ds, @viborgff_2019, @dmi_dmi,
+  @nager_holidays, @superstats_2026
+linestretch: 1.5
+---
+
+```{r}
+#| label: Setup
+#| echo: false
+#| eval: true
+
+# Options
+options(OutDec = ",")
+
+# Pakker
+pacman::p_load("knitr", "tinytex", "tidyverse") 
+```
+
+\thispagestyle{empty}
+## Læsevejledning {.unnumbered .unlisted}
+Denne synopsis er udarbejdet i forbindelse med 1. semesterprøven på Dataanalyse uddannelsen hos Erhvervsakademi Dania. Projektet er lavet af gruppe 2, bestående af Dennis Bork Kjeldsen, Martin Munk Laigaard, Rasmus Bech Poulsen og Sebastian Krog Husted.
+Analyserne i synopsen baseres på mere dybdegående analyser, som kan findes i bilagene, sammen med den kommenterede kode. I synopsen vil der fremover blive brugt forkortelser, sådan at Viborg F.F. omtales som VFF, og machine learning omtales som ML.
+\newpage
+
+\pagenumbering{gobble} 
+\tableofcontents 
+\newpage 
+\listoffigures 
+\newpage 
+\pagenumbering{arabic} 
+\setcounter{page}{1}
+
+## Problemstilling {#sec-problemstilling}
+I den moderne sport spiller dataanalyse en central rolle i beslutningsprocesser for at understøtte strategiske og kommercielle beslutninger for klubberne som virksomheder. Ved VFF kan evnen til at forudsige tilskuertal ved hjemmekampe bidrage til at optimere billetsalg, markedsføring og planlægning af ressourcer til kampene, blandt andet gennem mad, øl og personale på kampdagene.
+Den kommercielle afdeling har længe haft udfordringer med at forudsige billetsalget til klubbens hjemmebane, hvilket er en nøglefaktor for ressourceplanlægning, markedsføring og reducering af madspild – hvilket alt sammen har direkte indflydelse på klubbens finansielle resultat. For at imødekomme denne udfordring, har afdelingen et ønske om at udvikle en ML-model, der kan forudsige billetsalget en måned, 10 dage, 7 dage og 3 dage før kampstart ved at tage højde for faktorer som modstanderhold, vejrudsigt og akkumulerede point for sæsonen. Modellen skal fungere som beslutningsværktøj for at optimere ressourceplanlægning.
+For at benytte en sådan model til dens fulde potentiale, afhænger det dog også i høj grad af den praktiske implementering, som i sig selv også er dybt afhængig af klubbens datamodenhed, data governance og organisationsstruktur. Dette skaber altså et behov for at forstå hvordan en teknisk løsning af denne type kan tilpasses og implementeres til lige netop VFF's organisatoriske virkelighed. Dette projekt vil derfor ikke blot undersøge hvordan den optimale model bygges, men også hvordan det sikres at modellen kan implementeres i virksomheden, og integreres i klubbens daglige praksis på en måde hvor den skaber reel værdi som et beslutningsværktøj.
+
+### Problemformulering {#sec-pf}
+Hvordan kan VFF styrke deres beslutningsgrundlag for billetsalg, markedsføring og ressourceplanlægning, ved at udvikle og implementere en optimal ML-model der kan forudsige tilskuertallet til hjemmekampe på forskellige tidspunkter før kampstart?
+
+### Undersøgelsesspørgsmål
+1. Hvilket niveau af datamodenhed har VFF på nuværende tidspunkt?
+2. Hvilken ML-model forudsiger bedst tilskuerantal?
+3. Hvordan kan modellen tilpasses VFF’s datamodenhed og organisation for at skabe værdi i den kommercielle afdeling?
+
+## Videnskabsteori og metode
+For at kunne undersøge både de tekniske og forretningsmæssige aspekter af problemstillingen, anvender vi to forskellige videnskabsteoretiske tilgange. Projektet bygger derfor på et kombineret videnskabsteoretisk afsæt, hvor både positivismen og hermeneutikken spiller en rolle i hver deres del af projektet.
+I den tekniske del anvendes en positivistisk tilgang til at forudsige tilskuertal ved hjælp af ML og kvantitative data. Formålet er at skabe et objektivt beslutningsgrundlag for VFF gennem målbare metrikker som MSE/RMSE. For at sikre høj reliabilitet og reproducerbarhed anvendes set.seed [@james_islr]. Tilgangen er valgt, da den hjælper med verificeringen af virkeligheden gennem systematiske metoder. [@livegholm_videnskabsteori]
+For at sikre at projektets praktiske værdiskabelse undersøges VFF’s organisatoriske forhold, herunder deres kommercielle behov, data governance og datamodenhed. På baggrund af den hermeneutiske tilgang forstås viden som en fortolkningsprocess betinget af aktørernes erfaringer, holdninger og praksis [@livegholm_videnskabsteori]. Gennem tematisk kodning af interviews og præsentationer analyseres kvalitative data for at identifcere oplevede behov og barrierer i VFFs nuværende beslutningsprocesser [@hecker_code_interviews]. Denne kvalitative indsigt sikrer, at ML-løsningen ikke blot fungerer teknisk, men også er meningsfuld og implenterbar i VFF’s specifikke organisatoriske kontekst.
+Kombinationen af disse to tilgange sikrer en helhedsforståelse, hvor den positivistiske del leverer objektive analyser og forudsigelser, mens den hermeneutiske tilgang har fokus på den praktiske anvendelse i organisationen. Samlet set gør denne tilgang det muligt at besvare problemformuleringen balanceret og understøtte VFF’s ambition om øget datamodehed og udvikle sig til en datadrevet organisation.[@livegholm_videnskabsteori]
+Dette projekt anvender kvantitative og kvalitative metoder, for at identificere faktorer der påvirker tilskuertallet ved VFF’s hjemmekampe. Formålet med metoden er at skabe et datadrevet grundlag for analysen og samtidig supplere de informationer og indsigter fra VFF selv.
+Den kvantitative data indhentes fra eksterne kilder som Superstats anvendt til kamp- og tilskuerdata, DMI til vejrdata og Date.nager til information om helligdage. Kilderne bidrager med vigtige variabler, der kan påvirke tilskuertallet, såsom modstanderhold, vejrforhold og kalender relaterede faktorer. For at sikre høj reliabilitet, importeres og lagres data i gruppens SQL database. I databasen renses den rå data, der håndteres manglende værdier og ensretning af formater. Den endelige databehandling og modellering foregår i Rstudio.
+Den kvalitative del af metoden består primært af et interview med VFF samt materiale fra klubbens præsentationer. Disse kvalitative data fungerer som et supplement til de kvantitative fund og bruges til at perspektivere resultaterne, fx ved at identificere faktorer, som ikke umiddelbart kan måles direkte i de indsamlede data.
+
+## Analyse
+### Data Governance
+Dette afsnit er baseret på den fulde data governance analyse, som kan findes i [@bilagxxx].
+Analysen for VFF viser, at der er en tydelig strategisk forståelse af data som en værdiskabende ressource, der skal understøtte sportslige og kommercielle beslutninger, herunder kampdagsprædiktioner og ressourceplanlægning. Missionen om at anvende data effektivt, sikkert og struktureret er tydelig hos Daniel og Olga. Data governance er dog endnu ikke formaliseret i organisationen, men praktiseres i høj grad gennem uformelle arbejdsgange og individuel viden.
+Kvalitetssikring, validering og dokumentation af data udføres primært manuelt, og der findes kun få automatiske kontroller. Dette øger sårbarheden for VFF´s datakvalitet og risikoen for at de tager beslutninger på fejlagtige grundlag. Manglen på fælles datadefinitioner, faste regler for datastrukturer og ensartet dokumentation har tidligere medført, at automatiserede løsninger er blevet vanskelige at genanvende. Organisationen mangler at implementere Data Governance og dermed fordele ansvarsområder. Daniel skal fremover agere som Data Governance Officer i VFF. Han skal skabe en håndbog med retningslinjer og datatilgang beskrivelser som skal introduceres for organisationens forskellige afdelinger.
+Samlet set har VFF en klar strategisk ambition om at anvende data som beslutningsgrundlag, men manglende formaliseret data governance, personafhængighed, manuelle kontroller og et fragmenteret systemlandskab. For at kunne højne organisationens datamodenhed skal de ovenstående tiltag implementeres.
+
+### Datamodenhed
+Dette afsnit er baseret på den fulde datamodenhedsanalyse, som kan findes i [@bilagxxx].
+På baggrund af data governance-analysen og gennemførte interviews vurderes VFF at befinde sig i den accelererende del af fase 2 (Lære om forretningen) af Alexandra Instituttets datamodenhedsmodel. Organisationen anvender i stigende grad data til at træffe sportslige og kommercielle beslutninger. Dog udtrykker Daniel, at de er længere, men en lang række faktorer holder dem tilbage fra at opnå ønsket resultater.
+Deres tankegang og mål ligger i fase 3 og 4, men grundet silotænkning og mangelfuld datahåndteringsprocedure vil Daniel skulle påtage sig rollen som Data Governance Officer og indsætte regler for datahåndtering. Datakvalitetssikring og vedligeholdelse varetages primært af to nøglepersoner, hvilket medfører sårbarhed og begrænser skalerbarhed for VFF. Dette er ikke foreneligt med overgang til fase 3, hvor Data Governance, roller og processer er formaliseret gennem en håndbog.
+VFF viser en tydelig ambition om at anvende data mere som et konkurrenceparameter, men deres nuværende bemanding i dataafdelingen begrænser mulighederne for at automatisere og videreudvikle processer. Den manglende kapacitet betyder, at VFF vil forblive i den udførende del af data frem for at benytte det strategisk.
+Samlet set anvender VFF data aktivt til læring og beslutningsstøtte, men manglende formaliseret Data Governance, automatisering, systemintegration og organisatorisk kapacitet betyder, at klubben fortsat befinder sig i fase 2 og endnu ikke kan operere på fase 3-niveau.
+\newpage
+
+### Sammenligning og vurdering af modeller
+
+![Sammenligning af alle modeller.](modelsammenligning.png){#fig-modelsammenligning width="100%"}
+
+Der er blevet testet og trænet 5 forskellige modeltyper på tværs af 4 forskellige tidshorisonter før kampstart. Disse modeller evalueres her på baggrund af RMSE, for at kunne sammenligne dem på den mest fortolkelige metrik [@james_islr]. På tværs af modellerne, ser man et tydeligt mønster, en undtagelse ses dog ved de modeller der forsøger at forudsige 1 måned før kampstart, hvor Ridge tager føringen, da den opnår en lavere RMSE end både Lasso og de andre modeller. Dvs. at når der skal forudsiges 10, 7 eller 3 dage før kampstart, er det Lasso der performer bedst i test, mens det ved forudsigelse 1 måned inden kampstart er Ridge der performer bedst i test.
+
+![Sammenligning af bedst performende modeller.](bedstemodeller.png){#bedstemodeller width="100%"}
+
+For at vurdere de bedst performende modeller fokuseres der fortsat på RMSE som evalueringsmetrik. Figuren her viser at allerede fra 1 måned til 10 dage sker der en betydelig forbedring. Denne forbedring kan primært tilskrives inkluderingen af de nye variabler for det faktiske billetsalg før kampstart. Med disse variabler får modellerne et meget præcist og retvisende pejlemærke, der skaber større præcision i forudsigelserne.
+RMSE-værdien på 1064 ved prædiktioner en måned før kampstart indikerer en gennemsnitlig afvigelse på over 1.000 tilskuere. Uden adgang til præcise billetsalgsdata har disse langsigtede forudsigelser begrænset operational værdi, da fejlmarginerne er for store til at danne et solidt beslutningsgrundlag for eksempelvis bemanding og indkøb.
+Når vi derimod kigger på 10, 7 og 3 dage før kampstart ses det at RMSE’erne ligger på hhv. 519, 370 og 196 tilskuere. Denne udvikling understreger, at modellens anvendelighed er tæt forbundet med tidshorisonten. De langsigtede forudsigelser giver primært et vejledende billede, hvor de kortsigtede giver et reelt billede af forventet tilskuere. Det vurderes at de kortsigtede modeller, der inddrager billetsalgsdata tæt på kampstart, er bedst til at understøtte konkrete beslutninger om ressourceplanlægning i VFF’s kommercielle afdeling.
+
+## Væsentligste konklusioner
+Analysen placerer VFF i fase 2 af datamodenhedsmodellen. Selvom data anvendes i beslutninger, sænkes udviklingen af manglende data governance, høj personafhængighed og uklare strukturer, som dataudviklingen styres af få personer. Disse organisatoriske faktorer er afgørende for, hvordan en ML-løsning kan implementeres og skabe reel værdi.
+
+Resultaterne viser, at modellernes præcision er tæt forbundet med tidshorisonten, da inkluderingen af billetsalgsdata markant forbedrer performance. Ridge-modellen performer bedst ved en måned før, mens Lasso-modellen leverer de mest præcise resultater tæt på kampstart, altså 10, 7 og 3 dage før kampstart. De lave RMSE-værdier tæt på kampdagen gør disse modeller velegnet som beslutningsgrundlag, mens de langsigtede fungerer som en vejledende mulighed.
+
+Det konkluderes at VFF kan styrke deres kommercielle fundament ved at bruge ML som et værktøj tæt på kampstart. For at få fuldt udbytte af modellen skal den indføres gradvist og støttes af faste aftaler om dokumentation, ansvar og data governance. Ved at koble de tekniske forudsigelser med klubbens faktiske arbejdsgange kan VFF begrænse ressourcespild, tage mere præcise beslutninger og derfor være et skridt tættere på at blive en mere datadrevet organisation.
+
+\newpage
+
+## Literaturliste
+
+::: {#refs}
+:::
+
+\newpage
+
+\appendix
+## Bilag
+### Tematiserede interviews
+#### Temaer
+- \colorbox{green}{Datakultur}
+- \colorbox{magenta}{Dataarbejde}
+- \colorbox{red}{Data governance og struktur}
+- \colorbox{yellow}{Kapacitetsudnyttelse}
+- \colorbox{orange}{Billetaktivering og fremmøde}
+- \colorbox{cyan}{Økonomi}
+- \colorbox{brown}{Systemlandskab}
+- \colorbox{blue}{Placeholder}
+
+#### Præsentation af Daniel
+\colorbox{red}{Data governance og struktur}
+
+"I dag så har jeg [Daniel] en anden titel Head of Data and Technology,"
+
+"jeg [Daniel] varetager rigtig rigtig mange forskellige opgaver, men hovedopgave det er hvordan vi indsamler opbevarer og bruger data på tværs "
+
+"administrationen, det er alle dem, der var tager opgaver, som er udenfor fodboldbanen."
+
+"Den anden halvdel af virksomheden tager sig kerneopgaven, som jeg plejer at sige. Det er det, der har noget at gøre med fodboldspillet."
+
+"opdeler det sådan i fire afdelinger. Vi har en driftsafdeling. Det er en tre fire mennesker som sørger for at der er mad i hovedet. Der bliver solgt billetter. Der er nok personale på Alle de ting der skal til for at facilitere en fodboldkamp."
+
+"Salg. De står for aktiveringssponsorater. Det vil sige de taler med virksomheder i forhold til hvordan kan vi finde et eller andet partnerskab, hvor vi kan tilbyde noget. Ofte er det, vi kan tilbyde en unik platform i I forhold til at vi er den mest eksponerede virksomhed i kommunen "
+
+"Så har vi siden af en afdeling, som hedder marketing og kommunikation"
+
+"Der er tre fuldtidssælgere og en salgchef. I marketing og kommunikation der sidder to content createre."
+
+"Så er der en marketingsansvarlig. Så er der en ansvarlig for vores LinkedIn"
+
+"Økonomi er en fuldtidsmedarbejder, som hedder Pia, hun var dernede. Og så vores CFO, vores økonomidirektør"
+
+"Men det det [Palle] handler om, det er driften af boder og billetter salg"
+
+"Den første afdeling jeg vil komme ind på det er den vi kalder performance. Og i mange fodboldklubber så er performance noget med fysisk data, men den kalder vi physical hos os."
+
+
+\colorbox{orange}{Billetaktivering og fremmøde}
+
+"Når I kigger op på stadion, det her det er et billede af stadion, og I kan se, der har solgt nogle sponsorater til nogle virksomheder. Jamen, så Så skal vi jo have nogle sælgere ud og aktivere de her virksomheder, som ligesom kan sørge for, at der bliver lavet nogle partnerskaber."
+
+"vi har nogle sælgere, der tager ud til virksomheder og sørger for at vi er stærkt repræsenteret af det, hvad kan man sige, virksomhedsnetværk der er i Viborg. "
+
+\colorbox{yellow}{Kapacitetsudnyttelse}
+
+"Så når man hænger et skilt op på stadion, så bliver det set af rigtig rigtig mange mennesker. Så vi har en platform vi kan sælge på."
+
+"det vi bedst muligt kan tilbyde, det er en platform, hvor man kan blive set og hørt, og man kan skabe forbindelser på tværs af forskellige virksomheder."
+
+"vi laver forskellige netværker, som man, hvis man er en tømmervirksomhed, så kan man møde en mailervirksomhed, som kan møde en bankvirksomhed, så vi kan sætte folk sammen."
+
+"vi lige præcis skal målrette vores kommunikation hen imod de enkelte fans. På sigt så er planen sådan set at vi godt kunne tænke os at blive endnu skarpere på det"
+
+"så når vi taler med sponsorer at vi kan være meget tydelige omkring okay du er en bankvirksomhed. Vi har lige nøjagtig de her fans og som i kan kommunikere til igennem os. Det er et mål vi har"
+
+"Så er der data på merchandise. Altså hvad er det for noget vi sælger? Hvornår er det vi sælger det? Hvad er det vi skal være opmærksomme på og så videre?"
+
+
+\colorbox{magenta}{Dataarbejde}
+
+"På datasiden, så har vi et CM-system øh hvor vi registrerer aftaler, holder styr på produkter og indtjening og så videre"
+
+"det er her data tit bliver født hos os"
+
+"når der er en ny partner, som starter hos os, så bliver de lagt ind i systemet"
+
+"Igennem den [appen] så får vi også indsamlet en masse kan man sige stamdata på øh fans"
+
+"I dag der i samarbejde med Olga, der har vi egentlig gjort det sådan at nu kan de bare komme og bede om det, de har lyst til, og så sørger vi for at datainfrastrukturen er, og så er det egentlig bare tæt samarbejde med dem om, hvordan skal det her se ud, sådan så det viser de ting, de skal bruge. Så nu kan de bare skrive til os, jeg skal bruge øh vores KPI’er på de sidste 10 kampe, så kan vi give det til dem, hvor tidligere så var det en manuel proces, der godt kunne tage en halv dag, fordi så skulle man åbne alle filerne. måske printe dem ud. Skrive over i i hvad hedder det i Word måske så det over i Excel få koderne til at virke i Excel"
+
+"vores opgave er lidt det samme. Indsamle opgaver og præsentere sådan så at Dem der skal bruge det"
+
+"Dem der skal bruge det, hvis de fysisk trænere i stedet for de skal sidde i Excel og downloade og smide over og alle mulige forskellige ting, så går de bare ind og kigger, og så får de egentlig bare data præsenteret sådan så at deres opgave bliver at kigge på det færdige produkt og ikke lave det, fordi det er ikke deres kompetencer."
+
+"men der kan jo være enormt meget viden, som bliver lavet i de enkelte afdelinger, som kan bruges på tværs. Et eksempel på det er, at vi i samarbejde med den fysiske sektor havde rigtig store udfordringer med at hjælpe dem, fordi at de mente ikke at de kunne kalde spillerne, hvad de har lyst til. Så de kaldte spillerne deres nummer og så deres efternavn. Så når spillerne de skiftede numre, det gjorde de nogle gange, så var det forskellige spillere i deres datasæt, og så kunne de slet ikke finde ud af, hvad det egentlig var. Så det vi gjorde, det var, vi lavede unikke ID'er til hver eneste spiller på tværs af hele Viborg FF."
+
+"Men jeg plejer at sammenligne det med når jeg skal rengøre min lejlighed så hvis jeg skal gøre den sådan 90% rent så tager det måske en time en halv time at gøre den ring hvis jeg skal gøre den fuldstændig ring. Altså der må ikke være noget som helst i lejligheden. Øh jeg har et fem måneder gammel barn så det er faktisk fuldstændig umuligt. Men lad os bare sige det to en dag. Øhm. Jamen så så tager det proportionelt sindssyg lang tid at lave det sidste. Og det siger vi også med fuldautomatiske løsninger. Hvis vi skal lave en fuldautomatisk løsning, så vil I bare opleve, at det kommer til at tage sindssygt lang tid, for I har det øh potentielt, hvis dataen ikke er der. Øhm og det er bare vigtigt at få sagt, fordi når de så siger, jamen det skal virke fuld automatisk, så er det lidt nemmere for os at sige, jamen så kommer det bare til at tage længere tid på det"
+
+"men hvad nu hvis vi introducerer bare et manuelt step, sådan så I lidt hurtigere kan komme i gang øh med at få de ting, I godt kunne tænke jer at vide. Det kunne faktisk eksempel være at vi merchandingsafdelingen har et system der tillader CSV eksport jamen så kan vi
+downloade det lægge det i den rigtige mappe og så opdatere PowerBI så har vi faktisk det vi skal bruge."
+
+"for at vise dem at der er ligesom tre ting, ikke? Altså jeg har datakilden, det kunne være en ekstern leverandør. Vi har et eller andet der skal trække data fra datakilden over til det er som regel das gerne væk. Okay. Hvad er det, der skal trække det her data? Er det mig der skal gå ind og downloade det og lægge det i den rigtige mappe og så trykke opdatere det ligesom det der skal ske? Skal vi have sat noget kode op der trækker det automatisk? Hvad er det, der skal på en eller anden måde få data fra den her datakilde flyttet over til den præsentation, de gerne vil se? Og det er mere for sådan at sætte hele tiden billede på, at der er faktisk forskellige dele af det arbejde, vi laver"
+
+"jamen fra at Claus i merchandise siger, jeg vil gerne have et dashboard, det skal se sådan her ud til at vi ender med at have det dashboard. Der kan godt gå rigtig lang tid, og der er rigtig lang tid, hvor han oplever at jamen der sker jo ikke noget. De sidder jo bare der med deres computer og sådan noget. Siger jamen det er helt almindeligt at fra når vi kommer til dig og siger, er det sådan her det skal se ud til vi tester nogle forskellige ting, der er vi stort set færdige. Men Men indtil vi er der, der kan det godt gå rigtig lang tid, før du oplever der rent faktisk kommer nu. Fordi hvis jeg kigger på datastrukturen, der er fejl i datastrukturen. Hvorfor ser det sådan her ud? Vi skal måske have fat i leverandøren. Vi skal have fat i Claus igen. Alle de her ting her. Okay. Og lad os så sige, at ø man ansatte en praktikant, som hed Olga. Hun gik i gang, og hun kæmpede med det der billetdato. Hun fik det sku til at virke, og så ændrede man lige datastrukturen. Så tog man fat i leverandøren og sagde, det ville ville ikke være smartere, hvis man gjorde det her. Og så kommer Olga tilbage, og så lige pludselig så er datastrukturen fuldstændig ændret. Så alt det man har brugt tid på at automatisere, det er faktisk, jeg vil ikke sige ikke brugbart, men det var i hvert fald svært at sætte i brug" \\
+"vi skal kigge lidt mere på det her data warehouse, fordi vi kan godt over tid øh få tingene til til at fungere med den størrelse vi har nu med at gøre ting i Sharepoint, gøre ting med R, gøre ting med PowerBI, det kan vi godt få til at fungere. Men der kommer et tidspunkt om ikke sådan alt for længe, hvor at vi har så mange, hvad kan man sige, projekter i gang, at det er svært at gøre uden at få det næste lag på. Så skal vi have en større afdeling"
+
+
+\colorbox{green}{Datakultur}
+
+"jeg oplever generelt en rigtig stor nysgerrighed på, hvad vi kan få ud af vores data. Jeg synes, der hvor vi oplever øh udfordringer, det er forstå, jeg kommer ind på det lige om lidt også, forståelsen af hvor lang tid forskellige dele arbejdet med data kan tage, hvor at hvis du ikke har en datamæssig baggrund, kan du godt tro, at det tager jo ikke ret lang tid"
+
+"at der har været rigtig meget, hvad kan man sige, uddannelse, afdelinger, uddannelse af medarbejdere i forhold til, hvad er det, der tager tid, når vi når vi går i gang? Hvad er det så, I kommer til at opleve, hvornår er det, det ikke virker og sådan nogle ting der, det har der været en del af, fordi vi er en virksomhed som er meget sådan autodidakt oplært."
+
+"vi kigger meget på, er du medarbejdereafhængig, eller er du leverandør afhængig? Og vi var lidt begge dele."
+
+"altså du kan have medarbejdere, der sidder ude i, nu kommer jeg til Silo også lidt senere, som sidder mega mega dygtige og skifter arbejdsplads, og de tager bare deres computer og flytter med, og så er der bare intet tilbage for virksomheden. Altså sådan i der er ikke noget data, der er ikke nogen, der ved, hvad der er blevet lavet, så kommer der bare en ny en med en PC og begynder at arbejde. Og du har ingen anelse om, om det er det samme, om det er forskelligt, du har ingen chance. Og det vi så gjorde det sige, vi skal ikke være medarbejderafhængige. Hvis jeg ikke er her i morgen, så skal vi kunne arbejde videre. Hvis vi har en leverandør, der skruer prisen på højt op, så skal vi kunne arbejde videre"
+
+"Men det der godt kan ske det er at afdelingerne nogle gange godt kan have lidt svært ved at have tid til at snakke sammen med hinanden. Og derfor så er en del af vores opgave også at sørge for de ting som vi får implementeret som kan hjælpe på tværs det også bliver kommunikeret på tværs"
+
+"vi skal blive lidt skarpere på, at vi snakker om det samme, når vi snakker om data i en, hvad kan man sige, i en i en virksomhed
+Vi gør det sådan, at vi siger de første fire spørgsmål Det er noget de skal besvare. Det sidste det skal vi besvare. Det vil sige hvor hvor skal det fremvises? Skal det laves i en PDF? Skal de have det på mail? Skal der laves en platform? Skal der laves PowerB? Hvor er det skal fremvises til dem?"
+
+"Her har vi tit udfordring med at folk ikke rigtig er klar over hvad det egentlig er de gerne vil have vist. De vil bare gerne have vist data."
+
+"Nu er det Claus er ansvarlig for merchandise, men han har også en medarbejder Simon. Jamen skal de to se det samme eller skal de se to forskellige ting? Det kan jo godt være han som leder har behov for at se nogle ting, som Simon ikke skal se
+det er vi simpelthen gjort for at være sådan meget tydelige på, hvad er det vi egentlig har brug for, og hvornår er det, at vi ikke længere har brug for feedback til, hvor i Excel det skal ligge henne."
+
+"Så kigger vi på, jamen det der data i troede, der var der på spiller, tror jeg, men det det er der jo slet ikke. Altså vi har slet ikke noget data på det. Jamen, okay, så er det retur, og så begynder vi at stille krav til, I vil gerne have det her, men vi har jo ikke data på det. Vi tror på, vi kan gøre det på den her måde. Er det noget, vi skal gå videre med, eller? Ja, fedt. Vi kan godt gå videre. Vi har faktisk lige præcis data vi skal bruge"
+
+"alle vil gerne have fuld automatiske løsninger."
+
+"det der med at være en autodidakt virksomhed, datastruktur kan jo være mange dyr i skoven. Og der prøver vi bare at være sådan lidt skrappe på, hvad er det egentlig"
+
+"For at få en dialog omkring, hvorfor er det, det er så vigtigt at have det her ark her? Fordi det her ark indeholder alt den information, vi skal bruge, hvor at hernede der er ID lige pludselig flyttet op som en kolonne. Jamen, hvorfor var det et problem? Det er da ikke noget problem. Jeg er der bare lige rykker rundt på det, og så lige pludselig oplever de, at de ikke får deres ting" \\
+"Hvad for nogle filformater, der plejer jeg bare at sige, de er faktisk ligeglade. Bare vi sørger for at holde sådan rimelig ens, sådan så vi ikke nogen uger har øh billeder, og nogle uger har vi CSV-filer"
+
+"så har de lige tænkt, jeg retter lige på det, og så smider de det op i den mappe i stedet for de bare tog rådataen og lagde op" \\
+"Fordi hvis jeg nu hver eneste dag spillerne kom ind, målte deres højde, så havde jeg jo det bedste data i verden på, hvor høje var spillere. Er det så har været gode til at arbejde med data? Det har jo ingen betydning altså for hvor høje spillere er til noget som helst i vores forretning. Så derfor så er man bare nødt til at være meget klar på, hvad er det vi skal være gode til? Og det vi skal være gode til Det er, når vi nu har den data, så skal vi sørge for, at vi ikke øh bruger alt for lang tid på at undersøge alle mulige ting. Vi skal bruge data, der kan træffe beslutninger"
+
+#### Præsentation af Olga og praktikanterne
+\colorbox{green}{Datakultur}
+
+” Det her er så et eksempel på en testen hvor jeg. Imens jeg lige har været her, er der ikke blevet lavet den her test. Da jeg ikke har været med ude og observere, hvilken viste sig at være ret vigtigt. Til gengælde har jeg fået en god beskrivelse. Men det er heller ikke dem der skal tilpasse sig til min løsning, det er mig der skal løse det.”
+
+”Under praktikken har det været meget projektbaseret. Jeg har haft et bruttodataprojekt, som jeg nævnte sidst, vi var ude ved jer og præsentere. Jeg har fået udleveret en masse data fra stadion – koderne på stadion – fra deres poster, i alle mulige formater: PDF, Excel-filer og alt muligt.” 
+
+\colorbox{magenta}{Dataarbejde}
+
+"Så har jeg haft et andet projekt, som jeg bare har kaldt spillerstatistik. Det handler om benchmarking på køb, salg og leje af spillere i Superligaen generelt fra 2021 og frem. Det er stadig et igangværende projekt. Det har primært involveret webscraping fra Wikipedia og fra Superligahold, der har spillet forskellige år. Og så har vi haft Transfermarkt, hvor man kan se, hvilke spillere der har været på hvilke hold."
+
+"Helt i starten blev vi også præsenteret for Power BI og Power Apps. Jeg har mest brugt Power BI til at lave nogle visualiseringer af den strukturerede data. Anja har brugt Power Apps rigtig meget."
+
+"Jeg er også begyndt på en dataanalyse i R. I har hørt Daniel nævne, at nogle sidder i den sportslige afdeling og laver KPI’er for, hvad de skal kigge på. Jeg har fået GPS-data og andre data og selv fundet nogle, og forsøgt at gå til det med mine nysgerrige øjne udefra – jeg går ikke vildt meget op i fodbold, men jeg ved mere nu."
+
+\colorbox{red}{Data governance og struktur}
+
+” Der også nogle spørgsmål som jeg er kommet med, for jeg synes også at det kunne være interessant. Men jeg vil også sige at jeg er blevet meget positiv overrasket over den sportslige afdeling, som er dem jeg har arbejdet mest med. De ved rigtig mange ting og vil også gerne have mange ting, men det skal også bare være muligt. Vi skl nå dertil før vi kan lave det” 
+
+” Vi er stadig der hvor vi kigger på hvad PowerBi kan og der har de to her (det to praktikanter) været til meget hjælp”
+
+"Jeg skulle finde ud af, hvordan vi kunne få struktureret den data, så vi kunne visualisere den."
+ 
+"Vi har også arbejdet med mappestruktur, organisering og dokumentation af koden. Hvordan man bedst muligt gør det, så man kan finde tilbage til, hvad man har kodet og hvorfor. Og hvis jeg skal overdrage mine opgaver, når praktikken slutter, kan andre følge med i projektet."
+ 
+"Den starter lidt ’der’. Vi har kigget på noget kritisk tænkning. Det er ikke fordi, vi skal sidde og forklare, hvad alt det her er – for det kan Power BI normalt gøre ved at trykke på knappen. Men vi har lavet noget tekst-fortolkning af, hvad vi mener, det er."
+ 
+"Jeg lavede en PowerApp, men fandt ud af, at formlen i Excel ikke virkede – så jeg har lavet formlen direkte herinde. Det betyder, at hvis man ændrer noget i Excel-arket, så opdateres det. Jeg har lavet nogle tests, og der er et par småting at gå igennem, men ellers virker det fint.
+Det her er jo i bund og grund noget, vi skal have 2–3 nye egentlige medarbejdere til at sidde med, og det er også en måde at se, hvor vi skal sætte ind i fremtiden."
+
+\colorbox{orange}{Billetaktivering og fremmøde}
+
+"Det, Daniel bad mig om, var at lave en app til salg. Når vi har kamp, så kan de se, hvad der bliver solgt hvor, og hvornår der skal sættes i gang med at producere øl eller popcorn. Altså: hvor meget bliver der egentlig solgt?"
+
+\colorbox{brown}{Systemlandskab}
+
+” Godt spørgsmål, det skal være sådan at hvis Olga tager på ferie i 3 uger eller får tilbudt et jo i novo nordisk, at jeg så vil kunne overtage og forstå hendes kode. Vi koder forskelligt, men i PowerBi er det nemmere at overdrage, så det er klart fremtiden”
+
+#### Præsentation af Palle
+\colorbox{green}{Datakultur}
+\colorbox{magenta}{Dataarbejde}
+
+"Hvis vi kigger på tilsku og udviklingen, jamen ø så kan I se her at 19 øh I første division der var vi en i ar et et tilskuertal på 3.000. Så dykker det selvfølgelig lige her lidt med corona. Men ellers så kan I se hvor hvor stejl en kurve det har gået det har gået opad."
+
+"Øhm jamen så konkrete data her Olga, der skal du nok hjælpe mig lidt, men altså vi, hvad skal man sige? Jeg har næsten lavet den samme måde at opgøre tilskuertallet på alle 20 år, er det ikke sådan næsten rigtigt? Men men dybden i dataen er blevet en anden efter at, hvad skal man sige, vores billetsystem er blevet så detaljeret som det er nu. Så hvad har vi fire år eller sådan noget, hvor vi har den her detaljeringsgrad og sådan noget. Ja. Ja. Og det du sagde data var ok, ikke?"
+
+"Øh, en A-kamp, det er altså en A-kamp, det er de fire, det er de fire store. Det er, hvad er det hedder, Brøndby, det er AGF, det er Midtjylland, og det er FC København. Øh, en A-kamp, det er meget kategoriseret som noget, hvor vi ikke hvor vi hvor vi øh hvor vi kun via markedsføring på kampen kan skabe grundlaget for kampen. Hvorimod en C-kamp, det er det er en kamp, hvad skal man sige, hvor vi er opmærksomme på, hvis vi skal nå et tilskuertal, som er vores måltæ, så skal der ske aktivering."
+
+"Øh i søndags der spiller vi i FC i Parken. Der er en af mine kollegaer Alexander, som står for brodersalg på stadion, han er ovre og følge deres, hvad er det det hedder? Ansvarlig for food andage derovre."
+
+"Og og det det er helt helt ned på detaljen. Altså hvad hvad mål skal de have, hvad omsætning skal de have på den kamp, hvad har de i gennemsnitlig salg per tilskuer, hvad er deres prioriteringer inden for båerne og sådan noget. Der er ekstremt stor åbenhed, fordi at jeg tror generelt så kigger klubberne på at jo bedre vi alle sammen bliver, desto større mulighed er der for at løfte grundlaget for tilskuere i ø i Danmark."
+
+"men altså nu skal jeg passe på, hvad det sådan er, men altså noget noget af det, vi oplevet, når vi arbejder med, det er, at på en måde på en ting så har vi rigtig meget data. Men vi mangler nogle gange noget specifikt på en kamp. Altså for eksempel Vi spiller, vi har 16 kampe om året, men vi møder måske kun holdet en gang, så hvis måske to, så hvis nu at vi har spillet fire sæsoner, så kan det rent faktisk være, du kun, selvom det er 4 gange 16, så kan det være du kun har data fra fire gange fire kampe. Og der kan være helt vildt stor forskel på, om det er maj måned, september måned, december måned, om det er klokken to, klokken 4, klokken seks. Så øh, men jeg har store forventninger. rammer."
+
+\colorbox{yellow}{Kapacitetsudnyttelse}
+
+"Og vi har en kapacitet på 10.000."
+
+"Det har vi brugt ekstremt meget tid på i forhold til vores brug af data øhm og udvikle hele elektroniske platform, udvikle, hvad skal man sige, brugen af af de data vi opsamler kører på kampene ø brugsgrader og hvad er det det hedder omsætningstal i broderne på mange forskellige fonter. Så så der forsøger vi der forsøger vi at tage nogle skridt og har brugt det til at komme videre med os."
+
+"Så det er sådan nogle ting, vi prøver at bruge det på. Øhm, det samme øh med sæsonkort i ø 1819 der var der var sæsonkort, det var den traditionelle gamle ting med nærmest et plastikkort. som man fik udleveret og man købte på et årskort. Øhm, ret hurtigt så begynder der at ske noget med at ø at man får indført abonnementer på samme måde som Netflix og alt muligt andet."
+
+"Så i dag der er vi 4100 abonnenter på på hvad er det det hedder omkring stadion øh og I kan se der i 1819 der var vi 504 sæsonkortlige sæsonkort holdere så en helt eksklusiv udvikling."
+
+"Og så kan man se jamen så tager man fat i det og begynder at kommunikere med det stiller krav om og hvad gør i fordi for eksempel erhvervslubben, de har alle sammen adgang til spisning. Det er sådan ret nederen at regne med der kommer 800 mennesker og købe mad ind til 800 mennesker så kommer der kun 600. Så øh så det er sådan det er sådan ret tydeligt at det har man taget fat i at det det durer ikke det der. Og der er jo en masse gode historier med madspild og alt muligt andet. som man kan putte på sådan en kommunikation."
+
+"Og i dag noget af det, vi forsøger på derov, det er at putte putte menuer med ned oven i oven i hvad det hedder oven i billetprisen. Så det vil sige når du køber et et sæsonkort abonnement jamen så har du betalt for billetten plus du har betalt for stadionplatten.
+Jamen mit mål for den største altså vi vi har jo vi har nogle vi har nogle KPI mål. Øh vi har selvfølgelig på et tilskuertal. Vi har noget vi skal omsætte billetmæssigt."
+
+"Vi øh vi er i en situation at øh de folk der arbejder hos os de er som regel nødt til til at have to måske tre jobs, fordi vi har 16 events om året."
+
+"Altså der er markant forskel på at skal servicere 8500 eller skal servicere 6500. Så det er sådan det er sådan meget den forberedelsestid der er der er i det at det er den der er vigtig for os."
+
+\colorbox{orange}{Billetaktivering og fremmøde}
+
+"Så var der det her med med brugsgrader. Øhm. Her der har vi sådan vores forskellige produkter. Vi har vores billetsalg. Det ligger sådan rimelig pænt med 92% benyttelse."
+
+"Øhm, og vi går ind og kigger på prisstrukturen omkring det. Så vi vi går klart ind og siger, okay, Køber i abonnement, så kan I spare nogle penge."
+
+"Så i dag der Min rolle den går 100% på kampeviklingen. Så når vi har kampe inde på stadionne, så er det mit overordnet ansvar, at hele rammen omkring kampen, den fungerer."
+
+"Øh, nu snakker vi så om gennemsnit, der hvad bruger sådan en øh en juridisk tekstur har det har man tal på,hvad de bruger, når de er inde."
+
+\colorbox{brown}{Systemlandskab}
+
+"Øhm i forhold til i forhold til hele den her udvikling på datasiden i forhold til de elektroniske, hvad er det det hedder, elektroniske muligheder. Jamen så øh var vi det første stadion i Danmark, der gik over og havde NFC-sanning. Øh så det vil sige alle vores alle vores, hvad er det det hedder kort ø billetter ø har i dag NFC indarbejdet. Og det betyder jo at når man går ind og skal ind på stadion, så kan man bare lægge sin telefon op på på hvad er det det hedder på møllen, og så er der kommunikation med det"
+
+"Den normale scanning med QR-kode og alt sådan noget ikke fungerer, men det er en kæmpe fordel med NFC scanningen, fordi at mange har har, hvad skal man sige, nedtonet med lyset på på sin skærm, eller der er nok også et par jeres skærme, der er smadret og sådan nogle ting, men der der er der bare ikke noget i forhold til NFC- scanningen, og vi kan se det øh ekstremt meget på vores indgangsdata. Øh hvad det hedder, vi har aldrig kø."
+
+\colorbox{blue}{Placeholder}
+
+"Ja. Hvert år der der bliver der lavet i Superligaen, der blev lavet sådan en Superliga surervey, hvor hvor klubber bliver altså hvor tilskuerne til klubberne bliver spurgt, hvor man kan man skal man sige måle sig op mod de andre klubber. Så benchmark med dem der. Udover det her så har vi også kørt nogle, hvad er det hedder tilskuerundersøgelser. For tror jeg det to halvanden sæson siden eller sådan noget, hvor vi prøvede at arbejde med det. De der tilskuundersøgelse, det er noget vi gerne vil gøre lidt mere i. Og derudover så så har vi også undersøgelse vores ø hvad er det det hedder hovedpersonale og sådan noget der sådan giver feedback tilbage på hvordan de ligger."
+
+#### Interview med Palle og Olga
+\colorbox{green}{Datakultur}
+
+"Så altså det det vi skal det er at at Olga hun får bygget alle de her rapporteringsværktøjer således at at dataen bare bliver puttet i en en silo der og så kører det. Så der er vi i gang med ret store projekter lige på det."
+
+"For eksempel Palle han er utrolig god til at øh hvad hedder for det første såan samle på data og så strukturere så alle de der data som ikke ser men de ser ud så kan man tage det og så begynder at arbejde med det."
+
+"Jeg har også data fra evente som er struktureret så det vil sige som jeg sagde at jeg laver nogle transformationer i R
+hvor jeg har styr på inden vi begynder dags fordi jeg skal prøve sådan producere de der rapporter for eksempel Daniel sagde okay nu kommer vi til at arbejde med Claus det er nu afdeling for mig så ikke vi vil jo bare have et nu Vi vil kigger på hvordan dette ser ud som Daniel har også vist om det er faktisk den der struktur om vi kæter og vi begynder faktisk lave rapporter eller er vi nødt til at oplære dem hvordan man opsamle det eller måske hjælper dem med nogle programmer for om det kan måske lave måske kan vi jo sådan lave farve app så for at gøre det automatisk."
+
+"Daniel sagde i hvert fald ikke må og så nu hvis jeg skal vurdere så nu er vi meget på at få strukturer få det i rapporter så mennesker kan se det på et højt overblik det er der hvor vi nu fremtiden når alle sammen har rapporter som de har brug for så det er nok lidelsen som vil bestemme hvad næste det ikke skal stoppe."
+
+\colorbox{magenta}{Dataarbejde}
+
+"så er det blevet lidt mere systematiseret her"
+
+"Er der en grund til at de siger køb per tilskuer eller omsætning på tilskuer og ikke omsætning for køb?"
+
+"Er det den kan ja det ved jeg simpelth ikke men jeg mener det er 100 og nogle kroner eller sådan noget der er i i kassen der. Men grunden til den er også så svær og nok grunden til vi ikke arbejder så meget på den"
+
+"Nej, men altså jeg jeg arbejder i Excel, men altså det Olga arbejder 100 gangs meget."
+
+"Altså for eksempel partnerbilletter, nu kan jeg simpelthen ikke huske det, men jeg tror det er, tror det er 1800, når man regner ud på snit, at der er 1800 billetter er egentlig solgt til hver eneste kamp, så så jeg skulle helst have plads til dem."
+
+"hvor er jeres ø målsætning komme hen med alle de her nye systemer?
+Øh, systemer de mener PowerBI og
+Ja, PowerBI og alt detta benytter. Så lige nu er det mange manuelle processer,"
+
+\colorbox{yellow}{Kapacitetsudnyttelse}
+
+"Det skal helst ligge på omkring 75% af de tilskuere, der er. øh de skal handle. Så det det er mere det tal der vi bruge"
+
+"målsætning skal laves fire uger før eller sådan noget."
+
+"vi i høj grad gør, fordi altså lad os nu bare sige, der er en virksomhed som har 10 billetter øh for eksempel til hospitality til hver eneste kamp på det tidspunkt de har lavet aftalen"
+
+"6200 øh tilskuere til typisk på kampene pt. Hvor hvor tæt pakket skal stadion være før den før det før det er en fed oplevelse? Jeg tænker, der må være en eller anden kritisk masse for, hvornår det ser dødt og kedeligt ud, fordi der er for få folk. Hvornår rammer man den grænse? Altså at lige nu ligger vi jo så op sjovt nok på de der 62%, ikke?"
+
+"Altså jeg vil sige sådan, jeg tror jeg tror rammen omkring 5000 Så så er det et ret fedt stand."
+
+\colorbox{orange}{Billetaktivering og fremmøde}
+
+"Ja men det er altså hvad skal man sige vores billetdat altså vores billetdat platform der det er altså det er et univers, hvor der er en masse statistikker og sådan nogle ting til Kan godt bare arbejde i billetsystemet"
+
+"Altså, det er jo ikke fordi vi sådan hvis du tager det her år, det er jo ikke sådan fordi vi har blæst hele ligaen væk, men altså vi ligger alligevel stadigvæk med 6200 og hvor det var 6400 sidste år."
+
+"Altså hvis vi er, hvis vi er hvis vi er 8500 her, jamen så så er det måske maks 3.000 eller to, et5 eller sådan noget, som fysisk har købt billetten til kampen. De øvrige, de har købt billetten via partnerskaber eller via abonnementer. Så det er jo ikke nødvendigvis bare lige til den ene kamp der. Det er jo til en serie af kampe."
+
+"det er at vi forsøger som jeg sagde på abonnementerne og det Der forsøger vi at sælge menuer med ind."
+
+"det kører på kamp det kører på kamp på hvad skal man sige tilskuerfordeling på kampen så ved jeg at for eksempel sidste gang til afland der var der 625 billetter afhentet og 462 blev benyttet"
+
+"Vi får lige penge i kassen, der skal. Problemet er jo bare, hvis vi gang på gang kan se de her 10 billetter, de ikke bliver udnyttet, så får de jo ikke det udbytte ud af netværket, som de skal have."
+
+"men det er jo altså for eksempel af aktiveringen, hvor hvor du ikke betaler noget for billetten. Men det det ved du selv. Hvis du hvis du har adgang til at hente en billet, jamen så å jeg tror fandme også min lillesøster og hendes kæreste og deres to børn, de vil nok også god med fordi du har adgang. Det koster da ikke noget, så booker du otte billetter i stedet for fire. Men din lillesøster, hun gider sgu ikke med alligevel. Så så bliver fremmødet jo mindre. Og det er derfor sådan noget aktivering af det der, vi snakker ekstremt meget om, om vi bare skal putte et lille lille beløb på. Altså det kan være, at al aktivering i fremtiden godt kunne være, at når du har hentet billetten, så betaler du den, så får du en fransk hotdog eller en sodavand eller et eller andet, således at man stadigvæk i princippet betaler nul kroner, men du betaler noget for billetten, fordi Har vi bare haft på en art, så har vi altså en helt anden motivation til at bruge den"
+
+\colorbox{cyan}{Økonomi}
+
+"Altså jeg tror der hvor vores udsving er størst i forhold til tid og vejr, det tror jeg det er, det er bås øhm vi vi vores volumen, vores økonomi er er markant. større end en god hvad er det det hedder sommerdag efterårsdag altså eller undskyld sommerdag måske fredag aften og sådan nogle ting er markant større altså jeg tror da vi da vi har fck øh og sønder fredag aften her i starten der mener jeg vi ligger på en 76,8 kr. i omsætning per tilskuer hvor at vi mod hvad er det det hedder OB nu her er helt nede på 47 så der der er stor forskel men det er også meget logisk ikke fordi Altså køber du en fadøl kontra en kop kaffe, så er der i hvert fald en 20årig i forskel, ikke? Så noget er meget"
+
+"Øh, og til en normal kamp, der har vi på vores partnerside og på vores menuside i abonnement, der har vi solgt omkring 1000 menuer. Og når de bliver købt i båen, så er det jo nulkroners omsætning. Så derfor bruger vi meget mere. Vi bruger omsæ, altså salget per tilskuer, og så bruger vi antallet af handler. Og antallet af handler, antallet transaktioner."
+
+"vi har udsolgt på men jo mere du betaler, jo mere værdi der er på dit produkt, desto højere er dit fremmøde. Og så derfor dem der betaler, dem der har bedst fremmøde, det er dem der har købt til hospitality. Det er omkring hvad det er 1250 kr. hver billetkost om ikke? Så så dem er der højest fremmed på. Og så er det de sæsonkortholdere, som sidder midt på ovre i øst i de på de på de dyrere pladser. Men altså der er forskel på, om du betaler 39 kr. for en barnebillet på syd, og så du betaler, hvad er det hedder 189 for en voksen billet. med menu ovre på øst, så bruger du altså den der til 189 mere."
+
+\colorbox{brown}{Systemlandskab}
+
+"Den krølle der får vi faktisk på hvad er det det hedder på søndag kommer der en ny øh en ny en der gerne vil leverere kassesystemer til os som ø som hvad skal man sige skal prøve at sætte de sætter de lav to test terminaler til den her gang og fire til de næste. Og det er meget fordi vi ikke kan få nok data ud af vores nuværende øh at vi at vi ønsker at skifte ikke Ja."
+
+"vi alt vores aktivering sker sker via vekkode. Så alle der hvad skal man sige bruger de her aktiveringer, de er opretter en profil, så vi ved hvem vi snakker med og så bruger de vekkoderne. Så vi ved altid via koderne hvordan tilgangen den er til billet."
+
+"Så er det spørgsmål, hvor mange der trækker billetterne. Men hvis man kigger på vores partners sideide, så så deres adgang til billetter, det op i to kategorier. Der er der er det, man kalder eventbilletter. Det vil sige, at de har to billetter til alle kampe. Altså to billetter til hver kamp. Så har de også noget, der hedder puljebilletter. Der kan de for eksempel have 20 puljebilletter, men de bestemmer selv, hvornår de bruger de puljebilletter. Så for eksempel i en A-kamp, så kan de vælge at bruge, jeg tror, vi har en grænse på seks lige indtil videre, medmindre man lige spørger, om man må bruge 10. Altså, men så så derfor så det det er egentlig den måde, at der kan være forskellen på, men det er mere, hvordan virksomhederne selv vælger at bruge deres puljebilletter. Altså eventbilletterne, det er to til hver eneste kamp for eksempel. Så en del af rammen er den samme."
+
+"Det det eneste de eneste der har der har fast, hvad skal man sige, pladser altså som som har en en en et sæde på stadion. Det er det er dem der har årssæsonkort og hvad det sæsonkort abonnementer. Og så er det øh 250 partnere som har faste pladser ude i de sorte sæder. Ellers alt andet er billetttræk. Altså det vil sige du går ind og aktiverer. Du kan godt have fire pladser til kampen du kan bruge. Og hvis du ikke går ind og aktiverer dine pladser, så er pladserne ikke optaget. Så bliver de ikke taget."
+
+\colorbox{blue}{Placeholder}
+
+"så det ville v have en betydning på de billetter, som ikke er solgt i forvejen, at hvis der sker noget området."
+
+"Mere om hvis der er et eller anden stor begivenhed, der gør at folk de måske fravælger, Smukfest for eksempel."
+
+"Altså der er mange steder, hvor vi vores kommunikation, og hvor vi vores opfordring til at frigive pladser, og hvor vi vores opfordring til at udnytte de pladser, de har. Når vores fokus bliver fjernet en lille smule, for det er måske mere over på end det nye appunivers, vi skal have fortalt om. Og Øh, vi laver meget mere content i forhold til aktivering af videomæssig og sådan nogle ting."
+
+"Jamen vi starter egentlig med at kigge på kapaciteten, altså vi har på stadion, og så starter vi med at og så tager vi og forholder de, hvad er det det hedder den struktur vi laver, fordi vi har vi har Nogle opdelinger. Altså vi har, hvad er det det hedder en sydtribune, stemmeskabetribune, der er nogle begrænsninger på debillettyper de har. Vi har en østtribune ovre på den side derovre, som er meget til sæsonkortholder. Der er nogle begrænsninger på den. Så har vi noget partnerafsnitter. Så det er sådan meget, hvad der hvad der er solgt ind til de enkelte områder"
+
+"hvad skal man sige skabe fællesskab omkring det at opleve tilskuertal, fordi vores tilskuertal det er mega vigtigt. Altså fodbold det er for fællesskaber. Fællesskaber det er sjovest når vi er mange. Og det vil vi rigtig rigtig gerne. Så der vi har så mange afledte parametre af, at det lykkedes os at have et højt tilskuertal. Derfor er det vigtigt, at alle afdelinger på en eller anden måde har en fornemmelse af, de bidrager. Og så kan du sige kommunikation og sådan nogle ting. Jamen, hvordan hvordan er de lige mål, at de at de bidrager? Og det har vi bare sådan helt målart forsøgt at sige, jamen for eksempel, hvad er det det  720 i BD, så må vi jo kigge på, hvad er det, hvorfor opnår vi det ikke? Jamen, Øh, har vi ikke solgt pladserne? Jo, det havde vi faktisk. Altså, vi kunne godt have noget 720, fordi pladserne var med,"
+
+"Så der tag der der skal vi ud og have fat i virksomhed og snakke, hvad er hvad er det altså At er det ikke fedt nok det vi har, eller har vi en forkert approach på? Skal vi have flyttet i skybene? Skal vi have lavet om, at I har to skybaser hver eneste gang eller sådan noget? Så det skal altså det skal vi ud og have, fordi og vi skal gøre det før at vi sidder ude til kundemødet og siger, prøv at hør, vi forlænger sgu ikke sponsoratet, fordi at vi bruger det ikke. Der skal vi have fanget det.
+Jeg vil egentlig gerne dele den og sige på et dashboard der der skal det sådan være meget, hvad der er relevant for kontoret."
+
+"Ja. Øhm. Og det vil sige, det er vores det er meget op på vores kopimål, hvor vi er henne i forhold til vores kopimål, som er vigtigt, som er det over Altså jeg tror vi havde en snak Olga i i går med med hvad er det det hedder i forhold til clubizer ikke hvor hvor vi sådan lidt ligesom siger altså Olga har lavet rigtig rigtig mange opsummeringer på forskellige produkter der er herude på stadion"
+
+"Altså der er jo noget med det er naboens dreng, som man ved hvem er, som har løbet rundt og spillet fodbold med ens egen søn. Altså det er der noget over. Så er der noget over de der meget spændende dygtige spillere, hvor Thomas er et godt eksempel, og så er der nogen der bare godt kan lide at se nogen, der kan noget flæ og drible og sådan noget"
+
+"men FCK de står jo i samme situation, men måske altså man bare et meget højere højt tilskrtal, så derfor er der også flere der efterspørger nogle forskellige. Men de gik simpelthen ud og sagde, prøv at høre her, vi kan vi vi har nogle kerneprodukter, vi kan lave, så vi kan vi kan lave til masserne øh selvfølgelig også med andre produkttyper, men til masserne, dem der har helt specielle ønsker, som vi egentlig også skal det, det kan vi ikke gøre på stadion. Så vi laver en aftale med volt. Så kan man bestille ud i byen, og så er der et sted, hvor man kan få leveret det. Og ved du hvad? Alle er glade. Og det har vi betydet, at de har fået så et hjørne, hvor der er nogen der bestiller champagne og caviar hver gang. Det tror jeg ikke, vi kommer til at have. Men men jeg tror, det er sådan noget, vi kommer til at kigge ind på, for vi kan ikke vi kan ikke gøre det andet."
+
+#### Interview med Daniel og praktikanterne
+\colorbox{green}{Datakultur}
+
+"Vi tager en afdeling, og så begynder vi at arbejde med det. Altså selvfølgelig hvis de har brug for nogen data og de har nogle andre ønsker, så de vil ikke gå til ind fra marketing og så siger, at nu har vi lyst til det her, så de går til Daniel eller til mig eller vi kan godt lide at det er faktisk bare struktur, fordi det er meget nemmere at arbejde, fordi som den Daniels er vi også meget Vi er presset med tiden, og hvis vi har sådan mere tid, så vi har også sådan flere opgaver, som vi synes faktisk, at det ville være ikke spændende, men nødvendigt måske til at bare for at å få et luft op vores det måhed, men så det vil sige, at vi kan godt lide noget det struktureret, og hvis de har lyst til at snakke om noget, så vi meget sådan vi opføer dem, at de booker et møde hvor vi hedder ikke underviser, men forklare dem, hvordan det fungerer. Hvad er vores krav? Det er meget øh Daniels PowerPoint Daniel plejer også til at vise dem og så forklarer den der og så vi også sådan fraråde dem at hvis de skifter deres mening næste dag så måske er det ikke en god ide fordi vi er nødt til at starte forfra"
+
+"Ja, der indkalder vi den afdeling, vi samarbejder med, fordi at for eksempel så kan de sige, vi vil gerne have det her dashboard, det skal se sådan her ud. Og så kigger vi i data og siger vi, det her data kommer aldrig nogensinde til at kunne det. Altså som i aldrig nogensinde. Det kræver, vi gør lige nøjagtigt de her ting her. Så det har vi valgt at implementere, det kommer til at påvirke jeres arbejde lige nøjagtigt sådan her. Så I skal gøre sådan her, sådan her og sådan. Og så laver vi en guide til dem. Og så det er sådan her det skal gøres frem."
+
+"Tror det startede meget som at h man kigger lidt på det sådan okay, jeg prøvede at fremlægge sådan lidt nogle problemstillinger i forhold til medarbejderafhængigheder og virksomhedsafhængighed. Og så byggede vi ligesom så startede vi i en enkelt afdeling og sagde, okay, hvad kan vi gøre her? Men så i takt med at, hvad kan man sige, slubbrugeren sådan en som Palle begynder at se, hvad er det faktisk man kan"
+
+"så kommer der et efterspørgsprå mere og mere og mere, og så spreder det sig. I takt med at så har Palle lige pludselig et værktøj, som nogen i marketing synes er fedt, jamen så kunne de også godt tænke sig noget, der minder om. Så så helt til at starte med var det nok meget boret af dataafdeling, og nu er det meget mere. Vi skal faktisk prøve at sørge for, at vi bare kan nå at holde fast i eller Nå de projekter vi har, fordi vi har rigelige opgaver, fordi det spreder sig, fordi man oplever, okay, det jeg har brugt fire timer før hver eneste dag på, det er for ham her løst på to minutter. Det vil man jo gerne. Og oven i købet ser det pænere ud."
+
+\colorbox{red}{Data governance og struktur}
+
+"Jeg tror det man kan sige er, hvis dataafdelinger er involveret i projektet, så er det også der står for. Men vi har jo også projekter slagsafdelinger, vi ikke kan understøtte i dag, fordi vi bemanding til. Øh, men grundlæggende så hvis vi er inde over et projekt for eksempel med Palle, så så tager vi det ansvar øh og hvis vi ikke kan have indtastningsarbejdet af whatever reason, det kan der jo godt være nogle gange, at vi ikke sidder som den manuelle til at taste ting ind, så sørger vi for at dem der sidder med indtastningsarbejde får at vide nok arbejde, så vi sikrer os at det bliver gjort på den måde som vi aftaler."
+
+\colorbox{blue}{Placeholder}
+
+"Øh vi mangler nogen der har de kompetencesæt som dem der sidder herovre og har. Okay."
+
+"Øh i forhold til det er nogen der skal kunne arbejde med datastruktur for rensede data. De skal have nogle kodekompetencer og så skal man selvfølgelig også have nogle menneskelige kompetencer fordi man kommer til at sidde meget tæt på stakeholder."
+
+"Det det er sådan på kompetence nu. Hvis vi er den organisation, vi er lige nu fuldstændig statisk også om to år, så der er ikke blevet ansat nogen, der er ikke blevet lavet nye afdelinger, så tror jeg på at øh fem fuldtidsansættelser kunne understøtte det ud fra de behov."
+
+"Men hvad hvad med den administrative del hvordan?"
+
+"Altså nu har jeg siddet i med nogle data, hvor jeg primært har renset data og stillet nogle spørgsmål løbende, og jeg har ikke talt så meget, kan man sige, direkte datamodenhed med den afdeling. Øhm, men det virker til, at de er klar på forandringen, og de gerne vil det. Øhm, og om jeg jeg jeg måske heller ikke den rette person at spørge i forhold til sådan at rate det fra et til 10. Men jeg jeg tror også at øh jeg vil give dig ret i at det er det der med de øh de er meget åbne over for data, men jeg tror også det er en blanding af at finde ud af hvad er det data kan at det er sådan lidt lidt der mange af afdelingerne er og så hvor hvordan man arbejder med det nu."
+
+"Jeg tror jeg skal have specificeret dig hele til 10er, fordi hvis vi siger, at 10 det er den bedste i Superliga, så vil jeg måske sige, så er vi måske syv eller otte sådan realistisk."
+
+"Og hvad med for eksempel markedsføring afdeling og hvordan vi altså marketing, altså den der hedder mark, den der hedder salg, de refererer til hvad hedder det vores direktør dem der refererer til økonomidirektøren det er hvad hedder det os Palle øh HR og økonomi. Vi refererer til økonomidirektøren og resten refererer til den administrerende direktør og så er der nogle mellemledere kan man sige mellem"
