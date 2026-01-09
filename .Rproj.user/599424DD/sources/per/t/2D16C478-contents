@@ -1,0 +1,339 @@
+---
+lang: no
+format:
+  pdf:
+    documentclass: article
+    toc: false
+    toc-title: Indholdsfortegnelse
+    toc-depth: 3
+    number-sections: true
+    number-depth: 3
+    linestretch: 1.5
+    titlepage: true
+    lof: false
+    lot: false
+bibliography: VFFbib.bib
+header-includes:
+  - \usepackage[a4paper, top=30mm, bottom=30mm, left=20mm, right=20mm, heightrounded]{geometry}
+  - \usepackage{booktabs}
+  - \usepackage{makecell}
+  - \usepackage{pdfpages}
+  - \AtBeginDocument{\includepdf[pages={1}]{vff_forside.pdf}}
+crossref:
+  fig-prefix: ""
+  sec-prefix: ""
+  tbl-prefix: ""
+  eq-prefix: ""
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+#| label: Setup
+#| echo: false
+#| eval: true
+
+# Options
+options(OutDec = ",")
+
+# Pakker
+pacman::p_load("knitr", "tinytex", "tidyverse") 
+```
+
+<!-- Forklaring: -->
+
+<!-- # bruges til kapitler. Hvert nyt kapitel starter med #. -->
+
+<!-- ## bruges til afsnit inden for et kapitel. Nummereringen følger kapitelnummeret, fx 1.1, 1.2, 2.1 osv. -->
+
+<!-- ### bruges til underafsnit. Nummereringen bliver fx 1.2.1, 2.1.1 osv. -->
+
+<!-- #### bruges til endnu finere opdeling, fx 2.1.2.1, 2.1.2.2 osv. -->
+
+<!-- Denne struktur gør det let at overskue og navigere i dokumentet, og den kan automatisk danne grundlag for en indholdsfortegnelse i Quarto eller andre markdown-baserede systemer. -->
+
+<!-- Fjern ikke nedenstående kode. -->
+
+<!-- Den sørger for, at der kommer en liste over figurer og en liste over -->
+<!-- tabeller først og derefter nummererede sider. -->
+
+\pagenumbering{gobble} 
+\tableofcontents 
+\newpage 
+\listoffigures 
+\listoftables 
+\newpage 
+\pagenumbering{arabic} 
+\setcounter{page}{1}
+
+Forslag til afsnit i synopsen:
+# Læsevejledning:
+Denne synopsis er udarbejdet i forbindelse med 1. semesterprøven på Dataanalyse uddannelsen hos Erhvervsakademi Dania. Projektet er lavet af gruppe 2, bestående af Dennis Bork Kjeldsen, Martin Munk Laigaard, Rasmus Bech Poulsen og Sebastian Krog Husted.
+Analyserne i synopsen baseres på mere dybdegående analyser, som kan findes i bilagene, sammen med den kommenterede kode. I synopsen vil der fremover blive brugt forkortelser, sådan at Viborg F.F. omtales som VFF, og machine learning omtales som ML.
+
+# Problemstilling {#sec-problemstilling}
+I den moderne sport spiller dataanalyse en central rolle i beslutningsprocesser for at understøtte strategiske og kommercielle beslutninger for klubberne som virksomheder. Ved VFF kan evnen til at forudsige tilskuertal ved hjemmekampe bidrage til at optimere billetsalg, markedsføring og planlægning af ressourcer til kampene, blandt andet gennem mad, øl og personale på kampdagene.
+Den kommercielle afdeling har længe haft udfordringer med at forudsige billetsalget til klubbens hjemmebane, hvilket er en nøglefaktor for ressourceplanlægning, markedsføring og reducering af madspild – hvilket alt sammen har direkte indflydelse på klubbens finansielle resultat. For at imødekomme denne udfordring, har afdelingen et ønske om at udvikle en ML-model, der kan forudsige billetsalget en måned, 10 dage, 7 dage og 3 dage før kampstart ved at tage højde for faktorer som modstanderhold, vejrudsigt og akkumulerede point for sæsonen. Modellen skal fungere som beslutningsværktøj for at optimere ressourceplanlægning.
+For at benytte en sådan model til dens fulde potentiale, afhænger det dog også i høj grad af den praktiske implementering, som i sig selv også er dybt afhængig af klubbens datamodenhed, data governance og organisationsstruktur. Dette skaber altså et behov for at forstå hvordan en teknisk løsning af denne type kan tilpasses og implementeres til lige netop VFF's organisatoriske virkelighed. Dette projekt vil derfor ikke blot undersøge hvordan den optimale model bygges, men også hvordan det sikres at modellen kan implementeres i virksomheden, og integreres i klubbens daglige praksis på en måde hvor den skaber reel værdi som et beslutningsværktøj.
+
+## Problemformulering {#sec-pf}
+Hvordan kan VFF styrke deres beslutningsgrundlag for billetsalg, markedsføring og ressourceplanlægning, ved at udvikle og implementere en optimal ML-model der kan forudsige tilskuertallet til hjemmekampe på forskellige tidspunkter før kampstart?
+
+### Undersøgelsesspørgsmål:
+1. Hvilket niveau af datamodenhed har VFF på nuværende tidspunkt?
+2. Hvilken ML-model forudsiger bedst tilskuerantal?
+3. Hvordan kan modellen tilpasses VFF’s datamodenhed og organisation for at skabe værdi i den kommercielle afdeling?
+
+### Evt. af grænsning (osv.... \[\@sec-pf\] hvis du har brug for at referere til asnittet problemformulering)
+
+# Videnskabsteori og metode
+# Videnskabsteori
+For at kunne undersøge både de tekniske og forretningsmæssige aspekter af problemstillingen, anvender vi to forskellige videnskabsteoretiske tilgange. Projektet bygger derfor på et kombineret videnskabsteoretisk afsæt, hvor både positivismen og hermeneutikken spiller en rolle i hver deres del af projektet.
+I den tekniske del anvendes en positivistisk tilgang til at forudsige tilskuertal ved hjælp af ML og kvantitative data. Formålet er at skabe et objektivt beslutningsgrundlag for VFF gennem målbare metrikker som MSE/RMSE. For at sikre høj reliabilitet og reproducerbarhed anvendes set.seed [james_islr]. Tilgangen er valgt, da den hjælper med verificeringen af virkeligheden gennem systematiske metoder. [@livengholm_videnskabsteori]
+For at sikre at projektets praktiske værdiskabelse undersøges VFF’s organisatoriske forhold, herunder deres kommercielle behov, data governance og datamodenhed. På baggrund af den hermeneutiske tilgang forstås viden som en fortolkningsprocess betinget af aktørernes erfaringer, holdninger og praksis [@livegholm_videnskabsteori]. Gennem tematisk kodning af interviews og præsentationer analyseres kvalitative data for at identifcere oplevede behov og barrierer i VFFs nuværende beslutningsprocesser [@hecker_code_interviews]. Denne kvalitative indsigt sikrer, at ML-løsningen ikke blot fungerer teknisk, men også er meningsfuld og implenterbar i VFF’s specifikke organisatoriske kontekst.
+Kombinationen af disse to tilgange sikrer en helhedsforståelse, hvor den positivistiske del leverer objektive analyser og forudsigelser, mens den hermeneutiske tilgang har fokus på den praktiske anvendelse i organisationen. Samlet set gør denne tilgang det muligt at besvare problemformuleringen balanceret og understøtte VFF’s ambition om øget datamodehed og udvikle sig til en datadrevet organisation.[@livegholm_videnskabsteori]
+
+## Metode
+Dette projekt anvender kvantitative og kvalitative metoder, for at identificere faktorer der påvirker tilskuertallet ved VFF’s hjemmekampe. Formålet med metoden er at skabe et datadrevet grundlag for analysen og samtidig supplere de informationer og indsigter fra VFF selv.
+Den kvantitative data indhentes fra eksterne kilder som Superstats anvendt til kamp- og tilskuerdata, DMI til vejrdata og Date.nager til information om helligdage. Kilderne bidrager med vigtige variabler, der kan påvirke tilskuertallet, såsom modstanderhold, vejrforhold og kalender relaterede faktorer. For at sikre høj reliabilitet, importeres og lagres data i gruppens SQL database. I databasen renses den rå data, der håndteres manglende værdier og ensretning af formater. Den endelige databehandling og modellering foregår i Rstudio.
+Den kvalitative del af metoden består primært af et interview med VFF samt materiale fra klubbens præsentationer. Disse kvalitative data fungerer som et supplement til de kvantitative fund og bruges til at perspektivere resultaterne, fx ved at identificere faktorer, som ikke umiddelbart kan måles direkte i de indsamlede data.
+
+# Analyse
+
+## Data Governance
+Dette afsnit er baseret på den fulde data governance analyse, som kan findes i [@bilagxxx].
+Analysen for VFF viser, at der er en tydelig strategisk forståelse af data som en værdiskabende ressource, der skal understøtte sportslige og kommercielle beslutninger, herunder kampdagsprædiktioner og ressourceplanlægning. Missionen om at anvende data effektivt, sikkert og struktureret er tydelig hos Daniel og Olga. Data governance er dog endnu ikke formaliseret i organisationen, men praktiseres i høj grad gennem uformelle arbejdsgange og individuel viden.
+Kvalitetssikring, validering og dokumentation af data udføres primært manuelt, og der findes kun få automatiske kontroller. Dette øger sårbarheden for VFF´s datakvalitet og risikoen for at de tager beslutninger på fejlagtige grundlag. Manglen på fælles datadefinitioner, faste regler for datastrukturer og ensartet dokumentation har tidligere medført, at automatiserede løsninger er blevet vanskelige at genanvende. Organisationen mangler at implementere Data Governance og dermed fordele ansvarsområder. Daniel skal fremover agere som Data Governance Officer i VFF. Han skal skabe en håndbog med retningslinjer og datatilgang beskrivelser som skal introduceres for organisationens forskellige afdelinger.
+Samlet set har VFF en klar strategisk ambition om at anvende data som beslutningsgrundlag, men manglende formaliseret data governance, personafhængighed, manuelle kontroller og et fragmenteret systemlandskab. For at kunne højne organisationens datamodenhed skal de ovenstående tiltag implementeres.
+## Datamodenhed
+Dette afsnit er baseret på den fulde datamodenhedsanalyse, som kan findes i [@bilagxxx].
+På baggrund af data governance-analysen og gennemførte interviews vurderes VFF at befinde sig i den accelererende del af fase 2 (Lære om forretningen) af Alexandra Instituttets datamodenhedsmodel. Organisationen anvender i stigende grad data til at træffe sportslige og kommercielle beslutninger. Dog udtrykker Daniel, at de er længere, men en lang række faktorer holder dem tilbage fra at opnå ønsket resultater.
+Deres tankegang og mål ligger i fase 3 og 4, men grundet silotænkning og mangelfuld datahåndteringsprocedure vil Daniel skulle påtage sig rollen som Data Governance Officer og indsætte regler for datahåndtering. Datakvalitetssikring og vedligeholdelse varetages primært af to nøglepersoner, hvilket medfører sårbarhed og begrænser skalerbarhed for VFF. Dette er ikke foreneligt med overgang til fase 3, hvor Data Governance, roller og processer er formaliseret gennem en håndbog.
+VFF viser en tydelig ambition om at anvende data mere som et konkurrenceparameter, men deres nuværende bemanding i dataafdelingen begrænser mulighederne for at automatisere og videreudvikle processer. Den manglende kapacitet betyder, at VFF vil forblive i den udførende del af data frem for at benytte det strategisk.
+Samlet set anvender VFF data aktivt til læring og beslutningsstøtte, men manglende formaliseret Data Governance, automatisering, systemintegration og organisatorisk kapacitet betyder, at klubben fortsat befinder sig i fase 2 og endnu ikke kan operere på fase 3-niveau.
+
+## Sammenligning og vurdering af modeller
+![Model sammenligning over forskellige prediction tidspunkter](vff_modeller.png){#fig-vff_modeller width="80"}
+Der er blevet testet og trænet 5 forskellige modeltyper på tværs af 4 forskellige tidshorisonter før kampstart. Disse modeller evalueres her på baggrund af RMSE, for at kunne sammenligne dem på den mest fortolkelige metrik [james_islr].
+På tværs af modellerne, ser man et tydeligt mønster, en undtagelse ses dog ved de modeller der forsøger at forudsige 1 måned før kampstart, hvor Ridge tager føringen, da den opnår en lavere RMSE end både Lasso og de andre modeller. Dvs. at når der skal forudsiges 10, 7 eller 3 dage før kampstart, er det Lasso der performer bedst i test, mens det ved forudsigelse 1 måned inden kampstart er Ridge der performer bedst i test.
+![Bedst performende ML-modeller](vff_performance.png){#fig-vff-performance width="80%"}
+For at vurdere de bedst performende modeller fokuseres der fortsat på RMSE som evalueringsmetrik. Figuren her viser at allerede fra 1 måned til 10 dage sker der en betydelig forbedring. Denne forbedring kan primært tilskrives inkluderingen af de nye variabler for det faktiske billetsalg før kampstart. Med disse variabler får modellerne et meget præcist og retvisende pejlemærke, der skaber større præcision i forudsigelserne.
+RMSE-værdien på 1064 ved prædiktioner en måned før kampstart indikerer en gennemsnitlig afvigelse på over 1.000 tilskuere. Uden adgang til præcise billetsalgsdata har disse langsigtede forudsigelser begrænset operational værdi, da fejlmarginerne er for store til at danne et solidt beslutningsgrundlag for eksempelvis bemanding og indkøb.
+Når vi derimod kigger på 10, 7 og 3 dage før kampstart ses det at RMSE’erne ligger på hhv. 519, 370 og 196 tilskuere. Denne udvikling understreger, at modellens anvendelighed er tæt forbundet med tidshorisonten. De langsigtede forudsigelser giver primært et vejledende billede, hvor de kortsigtede giver et reelt billede af forventet tilskuere. Det vurderes at de kortsigtede modeller, der inddrager billetsalgsdata tæt på kampstart, er bedst til at understøtte konkrete beslutninger om ressourceplanlægning i VFF’s kommercielle afdeling.
+
+## Væsentligste konklusioner
+Analysen placerer VFF i fase 2 af datamodenhedsmodellen. Selvom data anvendes i beslutninger, sænkes udviklingen af manglende data governance, høj personafhængighed og uklare strukturer, som dataudviklingen styres af få personer. Disse organisatoriske faktorer er afgørende for, hvordan en ML-løsning kan implementeres og skabe reel værdi.
+
+Resultaterne viser, at modellernes præcision er tæt forbundet med tidshorisonten, da inkluderingen af billetsalgsdata markant forbedrer performance. Ridge-modellen performer bedst ved en måned før, mens Lasso-modellen leverer de mest præcise resultater tæt på kampstart, altså 10, 7 og 3 dage før kampstart. De lave RMSE-værdier tæt på kampdagen gør disse modeller velegnet som beslutningsgrundlag, mens de langsigtede fungerer som en vejledende mulighed.
+
+Det konkluderes at VFF kan styrke deres kommercielle fundament ved at bruge ML som et værktøj tæt på kampstart. For at få fuldt udbytte af modellen skal den indføres gradvist og støttes af faste aftaler om dokumentation, ansvar og data governance. Ved at koble de tekniske forudsigelser med klubbens faktiske arbejdsgange kan VFF begrænse ressourcespild, tage mere præcise beslutninger og derfor være et skridt tættere på at blive en mere datadrevet organisation.
+
+\newpage
+
+## Literaturliste
+
+::: {#refs}
+:::
+
+\newpage
+
+Al kode skal være i bilag (appendix)
+
+\appendix
+
+Eksempler på afsnit i bilag:
+
+## Dataforståelse (husk tankegang fra CRISP-DM)
+
+## Dataklargørelse
+
+```{r}
+#| message: false
+#| warning: false
+
+fff <- 1+1
+```
+
+
+### Hente data fra Superstats og gør dem tidy
+
+### Hente data fra DMI og gør dem tidy
+
+### Hente data fra nager.at og gør dem tidy
+
+### Hente Bjarnes data og gør dem tidy
+
+### RSQLight
+Uploade alle data til RSqLight og join data - brug som minimum select, left join, from, where og helst også group by og having. Vis at du kan bruge SQL til dataarbejde.
+
+### Download joinet datasæt, formatér behørigt, og gør data klar til preprocessing
+
+### Preprocess - dan flere variabler og lav ét datasæt uden missing med en række for hver hjemmekamp, og fjern alle variabler, som ikke skal indgå i
+
+## Modellering - herunder opdeling i et trænings- og testdatasæt - med et seed = jeres holdnummer.
+
+### Stor model - linenær regression med alle variabler
+
+### Lasso / Ridge - husk at bruge CV til at optimere lambda
+
+### Subset selection metoder (brug mindst én)
+
+### Sammenlign på validation de forskellige MSE fra hver model
+
+## Evaluering
+
+### Hvordan er Test-MSE sammenlignet med CV-MSE
+
+### Fortokning
+
+### Prædiktion på nye data (fx best-case/worst-case scenario for de første kampe i foråret)
+
+### Sammenlign resultatet med formålet med undersøgelsen.
+
+## Eksempler på markdown-sproget
+
+Her hentes et billede 
+
+Sådan henviser/refererer du til en figur: [@fig-crispdm]
+
+![Faserne i CRISP-DM.](crisp-dm.png){#fig-crispdm width="40%"}
+
+Her er et eksempel på anvendelse af en png fil, som skal ligge i dit
+working directory. Tekst mellem [] er figurteksten, som du øsnker i
+din opgave. Tekst mellem () er (placering og) navn på figuren. Tekst
+mellem {} er et henvisningsnavn, som du kan bruge til at henvise til
+figuren i din tekst. 
+
+
+Her er et eksempel på en figur, som jeg henviser til [@fig-bnp_pr_capita] . 
+En figur som JEG har lavet længere nede i koden.
+
+
+Her et eksempel med en tabel [@tbl-sammenfat], som JEG har lavet længere nede.
+
+Her er noget tekst blabla, og nu vil jeg gerne lave en reference til afsnit
+[@sec-problemstilling].
+
+Reference fx fra interviews bla.bla..bla...
+[@transskriberede_interviews] eller en bog [@bang_2025] osv
+
+Reference til en ligning: blabla @eq-forecasting blabla
+
+$$\hat{T}_{t} = \frac{1}{m} \sum_{j=-k}^k y_{t+j}$$ {#eq-forecasting}
+
+Jeg kan også referere til fx en værdi, som jeg har udregnet i en kode
+chunk:
+
+```{r}
+#| label: r_squared
+#| echo: false
+# Indlæs data og lav lineær regression
+library(ggplot2)
+model <- lm(hwy ~ displ, data = mpg)
+r2 <- summary(model)$r.squared
+
+```
+
+I forbindelse med den simple lineære regression er $R^2 =$
+`r round(r2, 2)`
+
+Lav gerne mange kode chuncks i stedet for at have lange chunks - det giver et bedre overblik. Indholdet i en kode chunk skal være sammenhængende. Men lav gerne flere i forbindelse med fx, at du laver en Lasso regression.
+
+
+
+```{r}
+#| label: Pakker og snik snak
+#| include: false
+
+# Tilføj kun de pakker, du har brug for, hvilket jeg ikke har gjort, da jeg har taget nogle irrelevante med. 
+pacman::p_load(tidyverse, caret, janitor, glue, leaps, car, glmnet, boot, feasts, fable, tsibbledata, forecast, fpp2, fpp3, fabletools)
+
+```
+
+<!-- Her har jeg brugt ctrl+shift+c for at udkommentere -->
+
+<!-- Hvis echo = TRUE, vises koden. -->
+
+<!-- Hvis echo = FALSE, skjules koden, men output vises stadig. -->
+
+<!-- Hvis eval = TRUE, køres koden. -->
+
+<!-- Hvis eval = FALSE, køres koden ikke, og der kommer derfor intet output fra chunken. -->
+
+<!-- include bestemmer, om både kode og output fra chunken skal inkluderes i det færdige dokument. -->
+
+<!-- Hvis include = FALSE, køres koden stadig (medmindre eval=FALSE), men hverken kode eller output vises i dokumentet. -->
+
+<!-- Dette er nyttigt, hvis du vil udføre noget "bag kulisserne" (f.eks. indlæse data), uden at det vises for læseren. -->
+
+<!-- echo: Skal koden vises? -->
+
+<!-- eval: Skal koden køres? -->
+
+<!-- include: Skal kode og output inkluderes i dokumentet? -->
+
+
+
+<!-- default for de tre vigtigste chunk options i RMarkdown/Quarto er: -->
+<!-- echo: TRUE - Koden vises som standard i dokumentet. -->
+<!-- eval: TRUE - Koden køres som standard. -->
+<!-- include: TRUE - Både kode og output inkluderes som standard i det færdige dokument. -->
+
+<!-- Prøv at ændre på include, eval, echo mv... -->
+
+```{r}
+#| label: fig-bnp_pr_capita
+#| message: false
+#| warning: false
+#| echo: false
+#| fig-cap: Australsk BNP pr capita
+#| fig-width: 4.5
+#| fig-height: 2
+
+global_economy |>
+  filter(Country == "Australia") |>
+  autoplot(GDP/Population) +
+  labs(title= "GDP pr capita", y = "$US")
+
+```
+<!-- "fig-bnp_pr_capita" er unikke navn til at lave reference med -->
+<!-- "Australsk BNP pr capita" er tekst til figuren -->
+
+
+```{r}
+#| label: tbl-sammenfat
+#| message: false
+#| warning: false
+#| echo: false
+#| tbl-cap: Outliers og indflydelsesrige observationer.
+
+sammenfat <- data.frame(
+  "observation" = c("16", "17", "39", "117"),
+  "outlier" = c("Ja", "Ja", "Nej", "Nej"),
+  "hoj_leverage" = c("Nej", "Nej", "Ja", "Ja"),
+  indflydelsesrig = c("Nej", "Nej", "Nej", "Ja"),
+  reference = c(
+    "Residuals vs Fitted, Q-Q Plot, Scale-Location, Boxplot",
+    "Residuals vs Fitted, Q-Q Plot, Scale-Location",
+    "Residuals vs Leverage",
+    "Residuals vs Leverage (Cook's Distance)"
+  )
+)
+
+colnames(sammenfat) <- c("Observation", "Outlier", "Høj leverage", "Indflydelsesrig observation", "Reference til plot")
+
+knitr::kable(sammenfat)
+
+```
+<!-- "tbl-sammenfat" er unikke navn til at lave reference med -->
+<!-- "Australsk BNP pr capita" er tekst til tabellen -->
+
+
+## Fed og kursiv, og punktform
+
+-   **Daniel** Daniel skreved med fed skrift
+    -   *Olga* Olga skrevet i kursiv
+        - ***Palle*** Palle skrevet med fed skrift og i kursiv
+
+"-" angiver punktform - bemærk de forskellige niveauer
